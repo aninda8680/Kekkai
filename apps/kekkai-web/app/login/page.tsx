@@ -23,7 +23,7 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl">
-          <form action={login} className="space-y-5">
+          <form action={async (formData) => { "use server"; await login(formData); }} className="space-y-5">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">Username <span className="text-xs text-gray-500">(Required for new accounts)</span></label>
               <input 
