@@ -1,0 +1,24 @@
+{
+  "name": "kekkai-monorepo",
+  "version": "1.0.0",
+  "description": "KEKKAI - Secure Developer Secret Vault",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently \"npm run dev -w @kekkai/api\" \"npm run dev -w kekkai-web\"",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.4",
+    "prisma": "^5.22.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  }
+}

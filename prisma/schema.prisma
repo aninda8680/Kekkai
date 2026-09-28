@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users & Auth ──────────────────────────────────────────────────────────
+
+model User {
+  id                    String          @id @default(uuid())
+  email                 String          @unique
+  username              String?         @unique
+  passwordHash          String
+  emailVerified         Boolean         @default(false)
+  emailVerifyToken      String?         @unique
+  emailVerifyExpires    DateTime?
+  totpSecret            String?         // encrypted TOTP secret (null = MFA not enabled)
+  totpEnabled           Boolean         @default(false)
+  recoveryCodes         String[]        // bcrypt-hashed recovery codes
+  failedLoginAttempts   Int             @default(0)
+  lockedUntil           DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  projects              Project[]       @relation("ProjectOwner")
+  memberships           ProjectMember[]
+  auditLogs             AuditLog[]
+  refreshTokens         RefreshToken[]
+  deviceCodes           DeviceCode[]
+  serviceTokens         ServiceToken[]
+  webSessions           WebSession[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique          // SHA-256 of the opaque random token
+  userId    String
+  familyId  String                    // All tokens in one login session share a familyId
+  used      Boolean  @default(false)  // Reuse detection: if true and replayed → revoke family
+  tokenType String   @default("web")  // "web" | "cli" | "service"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+// Web sessions tracked separately so the Sessions & Devices page can list + revoke them
+model WebSession {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionToken String   @unique // SHA-256 of the opaque token stored in the cookie
+  ipAddress    String?
+  userAgent    String?
+  lastUsedAt   DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Device Code (CLI login) ───────────────────────────────────────────────
+
+model DeviceCode {
+  id              String   @id @default(uuid())
+  deviceCodeHash  String   @unique  // SHA-256 of the random device code (never stored raw)
+  userCode        String   @unique  // 8-char alphanum code shown to user (XXXX-XXXX format)
+  userId          String?           // Set when user approves
+  approved        Boolean  @default(false)
+  badAttempts     Int      @default(0)   // Burn after 5 wrong user-code attempts
+  burned          Boolean  @default(false)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  // Device metadata collected on approval
+  requestIp       String?
+  requestDevice   String?  // User-agent / device name from CLI
+  requestOs       String?
+  // Step-up auth reference: approving requires a fresh password/TOTP check (max 5min old)
+  stepUpVerifiedAt DateTime?
+  stepUpType      String?  // "password" | "totp"
+  // Once approved, link to the CLI device record
+  cliDevice       CliDevice? @relation("DeviceCodeToCliDevice")
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userCode])
+  @@index([userId])
+}
+
+// CLI devices — shows up in Sessions & Devices page; can be revoked
+model CliDevice {
+  id           String     @id @default(uuid())
+  userId       String
+  name         String     // e.g. "MacBook Pro – office"
+  deviceCodeId String?    @unique
+  tokenHash    String     @unique  // SHA-256 of the current CLI access token for this device
+  familyId     String              // Refresh token family for this device
+  lastUsedAt   DateTime   @default(now())
+  lastIp       String?
+  revoked      Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  deviceCode   DeviceCode? @relation("DeviceCodeToCliDevice", fields: [deviceCodeId], references: [id])
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+// ─── Service Tokens (CI/CD) ───────────────────────────────────────────────
+
+model ServiceToken {
+  id            String    @id @default(uuid())
+  name          String               // e.g. "github-actions"
+  tokenHash     String    @unique    // SHA-256 — shown once to user, never stored raw
+  userId        String               // Creator
+  projectId     String
+  environmentId String
+  scopes        String[]  @default(["pull"]) // ["pull"] only — service tokens are read-only
+  expiresAt     DateTime             // Mandatory: max 90 days from creation
+  lastUsedAt    DateTime?
+  lastIp        String?
+  revoked       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([environmentId])
+}
+
+// ─── Projects ──────────────────────────────────────────────────────────────
+
+model Project {
+  id            String          @id @default(uuid())
+  name          String
+  slug          String          @unique
+  ownerId       String
+  wrappedDek    String?                         // base64 AES-256-GCM wrapped DEK
+  kekVersion    String          @default("v1")  // which KEK wrapped the DEK
+  owner         User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  environments  Environment[]
+  members       ProjectMember[]
+  serviceTokens ServiceToken[]
+}
+
+model ProjectMember {
+  id                    String                  @id @default(uuid())
+  projectId             String
+  userId                String
+  role                  String                  // OWNER | ADMIN | DEVELOPER | VIEWER
+  project               Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  environmentGrants     EnvironmentMemberGrant[]
+
+  @@unique([projectId, userId])
+}
+
+// ─── Environments ──────────────────────────────────────────────────────────
+
+model Environment {
+  id              String                   @id @default(uuid())
+  projectId       String
+  name            String                   // development | staging | production | custom
+  protected       Boolean                  @default(false)  // P0.5: protected env flag
+  project         Project                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  secrets         Secret[]
+  serviceTokens   ServiceToken[]
+  memberGrants    EnvironmentMemberGrant[]
+
+  @@unique([projectId, name])
+}
+
+// Explicit per-environment grant for DEVELOPER access to protected environments (P0.5)
+model EnvironmentMemberGrant {
+  id              String        @id @default(uuid())
+  memberId        String
+  environmentId   String
+  canPull         Boolean       @default(false)  // explicit pull access on protected env
+  grantedAt       DateTime      @default(now())
+  grantedById     String
+  member          ProjectMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  environment     Environment   @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, environmentId])
+}
+
+// ─── Secrets ───────────────────────────────────────────────────────────────
+
+model Secret {
+  id            String          @id @default(uuid())
+  environmentId String
+  key           String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdById   String?
+  updatedById   String?
+  environment   Environment     @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  versions      SecretVersion[]
+
+  @@unique([environmentId, key])
+  @@index([environmentId])
+}
+
+model SecretVersion {
+  id          String   @id @default(uuid())
+  secretId    String
+  version     Int
+  ciphertext  String   // base64 AES-256-GCM output
+  nonce       String   // base64, 12 bytes, unique per encryption
+  authTag     String   // base64, 16 bytes, GCM tamper-evidence tag
+  aad         String?  // base64 of the AAD used (stored for audit, not for decryption)
+  kekVersion  String   @default("v1")  // which KEK/DEK version was used
+  createdAt   DateTime @default(now())
+  createdById String?
+  secret      Secret   @relation(fields: [secretId], references: [id], onDelete: Cascade)
+
+  @@unique([secretId, version])
+  @@index([secretId])
+}
+
+// ─── Audit Log ─────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String
+  action        String   // USER_LOGIN | SECRET_CREATED | SECRET_ACCESSED | SECRET_DELETED | etc.
+  resourceType  String?  // SECRET | PROJECT | ENVIRONMENT
+  resourceId    String?
+  resourceKey   String?  // key name only — NEVER the value
+  projectId     String?
+  environmentId String?
+  ipAddress     String?
+  userAgent     String?
+  metadata      String?  // JSON string for additional context
+  prevHash      String?  // P2.1: hash chaining for append-only integrity
+  rowHash       String?  // SHA-256(prevHash + action + resourceKey + createdAt)
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([createdAt])
+}

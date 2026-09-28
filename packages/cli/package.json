@@ -1,0 +1,34 @@
+{
+  "name": "@kekkai/cli",
+  "version": "1.0.0",
+  "description": "KEKKAI CLI — Secure developer secret vault",
+  "bin": {
+    "kekkai": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@kekkai/shared": "*",
+    "chalk": "^5.6.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "ioredis": "^6.0.0",
+    "keytar": "^7.9.0",
+    "ora": "^8.2.0",
+    "rate-limit-redis": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

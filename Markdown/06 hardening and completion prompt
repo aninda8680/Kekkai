@@ -1,0 +1,223 @@
+# KEKKAI — Round 2: Hardening & Completion Prompt
+
+Give this file to your implementation agent together with the repo and docs 00–05. It is based on a
+review of the Phase 1–5 implementation report. Work top to bottom: P0 items block launch.
+
+## Context to give the agent
+
+> Phases 1–5 were implemented but the report only says "Coded". Nothing has been run yet
+> (migration, vitest, CI all pending). Treat every "✅ Coded" as unverified. Your job in this
+> round is to (0) prove what exists actually works, (1) fix the security gaps below, (2) finish the
+> frontend deliverables that were skipped, (3) finish ops/CI. For every item, report evidence
+> (test name, command output, or diff), not just "done".
+
+---
+
+## Step 0 — Verify before changing anything
+
+1. `npm install`, `tsc --noEmit` for every workspace, lint, and fix all errors.
+2. Use `prisma migrate dev` locally, but production deploys must use `prisma migrate deploy`.
+3. Install vitest, run the existing `security.test.ts`, and report pass/fail honestly.
+4. Boot the API with a fresh `MASTER_KEK`, then run the real flow by hand:
+   `login → init → push → pull → run → get → history → rollback → logout`.
+5. Confirm from the database (psql) that no plaintext value exists in `secret_version`,
+   `audit_log`, or `refresh_token`. Paste the query and result.
+
+---
+
+## P0 — Launch blockers
+
+### P0.1 Device-code approval is a bypass of the web/cli token split
+
+Problem: a stolen web session (XSS, malware, shared PC) can start `kekkai login` on the attacker's
+machine, approve the code from the hijacked browser session, and receive a `cli` token. That token
+can call `/sync/pull` and read everything, so the "dashboard can never reveal secrets" guarantee
+collapses.
+
+Hardened flow:
+
+```
+ Attacker/User CLI            API                       Browser (logged in)
+ ─────────────────            ───                       ───────────────────
+ kekkai login ───────────►  create device_code (hashed)
+                            user_code = 8 chars, high
+                            entropy, expires in 10 min
+ ◄── shows user_code + URL
+                                                        open /cli/authorize
+                                                        ┌───────────────────────────┐
+                                                        │ Enter code shown in your   │
+                                                        │ terminal: [ ABCD-EFGH ]    │
+                                                        │ Requested from: IP, city,  │
+                                                        │ OS, device name, time      │
+                                                        │ STEP-UP: password or TOTP  │
+                                                        │ (fresh, < 5 min old)       │
+                                                        └───────────────┬───────────┘
+                            approve only if step-up valid ◄─────────────┘
+                            email notification: "New CLI device authorized"
+ poll ◄── cli token (bound to device record: name, IP, created, last used)
+```
+
+Requirements:
+- The user must type the code into the browser (not click a link that pre-fills it).
+- Approval requires step-up auth (password re-entry, or TOTP once MFA exists) even in a live session.
+- Show device metadata on the approval screen; single-use codes; 10-minute expiry; max 5 wrong
+  attempts then the code is burned; rate limit `/cli/authorize` per user and per IP.
+- Send an email on every new CLI device. Provide a "not me → revoke all sessions" link.
+- Store CLI tokens as device records so the dashboard can list and revoke them.
+- Verify `tokenType` is never accepted from client input on any endpoint.
+- Tests: approval without step-up fails; expired, reused and brute-forced codes fail.
+
+### P0.2 Audit must fail closed for plaintext access
+
+Fire-and-forget audit is fine for metadata reads, not for value reads. For `/reveal`, `/sync/pull`
+and `get`: write the audit row first (same transaction where possible); if the write fails, return
+500 and do not return plaintext. Test it by forcing the audit insert to throw.
+
+### P0.3 Bind ciphertext to its context (AAD)
+
+Use AES-256-GCM additional authenticated data so a DB writer cannot swap ciphertexts between rows
+or projects.
+- Secret value AAD = `projectId | environmentId | secretId | key | version`.
+- DEK wrap AAD = `projectId | kekVersion`.
+- Since there is no production data yet, change it now; write the migration/re-encrypt note anyway.
+- Test: moving a ciphertext to another secret row must fail authentication.
+
+### P0.4 Real authorization tests (not only crypto unit tests)
+
+Add integration tests with a real test DB and supertest:
+- Route enumeration: iterate the Express router and assert every route that can return a secret
+  value returns 403 for a `web` token and 401 without a token. Fail CI if a new route is not
+  classified as `metadata`, `cli-only`, or `public`.
+- IDOR: user B requests user A's project/environment/secret IDs on every endpoint → 403/404.
+- RBAC matrix (role × endpoint × environment) as a table-driven test. VIEWER never receives values.
+- Cross-project `clone`: requires read on source AND ADMIN+ on destination.
+- Refresh rotation: replaying an old refresh token revokes the whole family.
+- Log test: run the whole suite with a canary secret value and grep captured stdout/stderr.
+
+### P0.5 Environment-level permissions
+
+Roles alone are too coarse. Add per-environment policy:
+- `production` (and any environment flagged `protected`): value access limited to OWNER/ADMIN by
+  default; DEVELOPER access is an explicit per-member grant.
+- `pull` and `run` on protected environments require a fresh step-up (or `--confirm-env production`).
+- Show these rules in the dashboard's Team page.
+
+### P0.6 Service tokens for CI/CD
+
+Without these, people will paste personal CLI tokens into CI. Add a third token type `service`:
+- Scoped to one project + one environment, read-only by default, mandatory expiry (max 90 days).
+- Created via `kekkai token create --env production --ttl 30d --name github-actions`, shown once,
+  stored hashed, revocable, every use audit-logged (with IP).
+- CLI accepts `KEKKAI_TOKEN` env var for non-interactive use; service tokens can only call `pull`/`run`.
+
+### P0.7 Account security
+
+- Email verification before an account can create projects.
+- TOTP MFA (with recovery codes). Require MFA for OWNER/ADMIN of any project with a `production`
+  environment, and for CLI device approval.
+- Password policy: minimum length 12, breached-password check (HIBP k-anonymity API), no composition
+  rules theatre.
+- Per-account lockout/backoff (not only per-IP rate limits), generic error messages so login and
+  register cannot be used to enumerate emails. Split login and register into separate endpoints if
+  the current "login creates account if username present" behavior still exists.
+- Session/devices page: list web sessions and CLI devices, revoke individually or all.
+
+### P0.8 CLI credential storage (you are on Windows)
+
+`~/.kekkai/config.json` with `0600` means nothing on Windows.
+- Store refresh tokens in the OS keychain (Windows Credential Manager / macOS Keychain / libsecret)
+  via a maintained keyring package; fall back to a file only with an explicit warning and
+  best-effort permissions (`icacls` on Windows).
+- Config file keeps non-secret data only (API URL, active project/env IDs).
+- `kekkai doctor` reports which storage backend is in use.
+
+### P0.9 Rate limiting that survives production
+
+- Move limiter state to Redis (Upstash is fine); in-memory limits reset on deploy and don't span instances.
+- Set Express `trust proxy` correctly for Render/Railway so IP limits don't key on the proxy.
+- Key limits on user ID where authenticated, IP where not. Raise/split limits so `kekkai run` in
+  normal dev use never trips them; service tokens get their own bucket.
+
+---
+
+## P1 — Frontend deliverables that were skipped
+
+The report shows only layout, dashboard page, secrets page and CSS. These were in the brief
+(`04-FRONTEND-UX.md`) and are still missing:
+
+1. Marketing/landing site: Lenis smooth scroll (marketing pages only), scroll-triggered
+   "New Laptop Scenario" hero, animated terminal component, security section with the envelope
+   encryption diagram redrawn in SVG, pricing, CTA.
+2. Framer Motion: shared-layout drill-down (project → environment → secrets), `AnimatePresence`
+   slide-over panels, staggered list entrance on first load only. Respect `prefers-reduced-motion`.
+3. Pages: `/cli/authorize` (P0.1 flow), Version History timeline (masked), Team (members, roles,
+   environment grants), Audit Logs (filterable table), Settings → Sessions & Devices, Settings →
+   Security (MFA, password), Service Tokens.
+4. `Cmd/Ctrl+K` command palette (projects, environments, recent audit entries, quick actions).
+5. Typed-confirmation modals for destructive actions on protected environments.
+6. Security headers in `next.config`: nonce-based CSP (no `unsafe-inline` scripts),
+   `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, HSTS. Verify
+   Next.js server actions only accept same-origin requests, and confirm the cookie strategy works
+   when web and API are on different domains (SameSite=Strict cookies will not cross sites; route
+   all API calls through Next server actions/route handlers or use a shared parent domain).
+7. Loading, error and offline states everywhere; no raw error text from the API shown to users.
+
+---
+
+## P2 — Operations
+
+1. Audit log append-only: migration `REVOKE UPDATE, DELETE ON audit_log FROM <app_role>`, run the
+   app with a least-privilege DB role. Add hash chaining (each row stores `prev_hash`,
+   `row_hash`) and a `kekkai audit --verify` command.
+2. Replace the console-patching redactor with a structured logger (pino with `redact` paths) and
+   keep the console patch only as a backstop. Add request IDs.
+3. Env validation at boot with Zod for every API variable (fail fast, never print values).
+4. `/healthz` and `/readyz`, graceful shutdown (drain requests, close Prisma), global error handler
+   that returns sanitized errors.
+5. GitHub Actions: lint, typecheck, tests against a Postgres service container, `npm audit`,
+   Trivy on the container image, gitleaks, and a `prisma migrate deploy` dry check.
+6. Dockerfile (multi-stage, non-root user) and a `docker-compose.yml` for local Postgres + Redis.
+7. KEK lifecycle: the runbook covers compromise rotation, but also write the **KEK backup/escrow**
+   procedure. If the KEK is lost, every secret is unrecoverable. Store the escrow copy offline,
+   separate from DB backups, with two-person access. Add a quarterly restore drill to the checklist.
+8. DB: enable at-rest encryption and PITR on Neon/Supabase, test a restore, and document RPO/RTO.
+9. Load test `/sync/pull` and `/sync/push` with k6; add DEK unwrap caching with a short TTL and
+   confirm cached keys are never logged or serialized.
+10. Run an OWASP ASVS Level 2 self-audit and record the results in `docs/ASVS.md`.
+
+---
+
+## P3 — CLI polish
+
+- `kekkai get --copy` clears the clipboard after 30 seconds.
+- `kekkai run` removes `KEKKAI_*` variables from the child environment, forwards signals, and
+  preserves exit codes (test on Windows: `npm run dev` under `cmd`, PowerShell, Git Bash).
+- `.env` parser fidelity tests: quotes, multiline values, `export` prefix, comments, `=` inside values,
+  CRLF, BOM, duplicate keys. `push` then `pull` must round-trip byte-for-byte semantically.
+- New: `kekkai token create|list|revoke`, `kekkai devices list|revoke`, `--json` output on list-type
+  commands, `--yes` and `KEKKAI_TOKEN` for CI, meaningful exit codes, shell completion, update notifier.
+- Optional: `kekkai run --offline` using an encrypted local cache keyed from the OS keychain,
+  expiring after a configurable TTL, so a short API outage doesn't block development.
+
+---
+
+## Docs to add or update (in `docs/`)
+
+- `06-DEVICE-AUTH-FLOW.md` — the hardened flow above with ASCII sequence diagram and threat notes.
+- `07-TOKEN-MODEL.md` — `web`, `cli`, `service` tokens: TTLs, scopes, storage, revocation, table of routes each may call.
+- `08-ENV-FORMAT-AND-DATAFLOW.md` — exact `.env` parsing rules, what is stored in each table, how a value moves
+  parse → encrypt (with AAD) → DB → decrypt → file/process, with an ASCII diagram.
+- `09-KEK-BACKUP-AND-ROTATION.md` — escrow, rotation, restore drill.
+- Update `02-SECURITY-ENV-STORAGE.md` with the AAD design and environment-level permissions.
+
+## Rules for the agent
+
+- Do not add a value-returning endpoint reachable by a `web` token, ever.
+- Do not mark an item done without evidence.
+- Do not log request bodies on `/auth`, `/secrets`, `/sync`.
+- If a spec conflict appears, stop and ask instead of choosing the weaker security option.
+
+## Definition of done for launch
+
+All P0 items have passing automated tests; Step 0 flow works end-to-end on a clean machine
+(Windows included); P2.1, P2.5 and P2.7 are complete; P1 items 1, 3 and 6 are shipped.

@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --background: #080808;
+  --foreground: #f5f5f5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), 'Fira Code', 'Cascadia Code', monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Masked value — animated dots ─────────────────────────────────────────
+ * Hover causes a subtle shimmer across the dots (~200ms), signaling
+ * "this is intentionally hidden" rather than feeling like a missing feature.
+ * prefers-reduced-motion: animation disabled.
+ * See 04-FRONTEND-UX.md §5 micro-interactions.
+ */
+.masked-value {
+  display: inline-block;
+  letter-spacing: 0.15em;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .masked-value:hover {
+    animation: maskedShimmer 0.3s ease-out forwards;
+  }
+
+  @keyframes maskedShimmer {
+    0%   { opacity: 1; letter-spacing: 0.15em; }
+    40%  { opacity: 0.4; letter-spacing: 0.22em; color: #6366f1; }
+    100% { opacity: 1; letter-spacing: 0.15em; color: #6b7280; }
+  }
+}
+
+/* ── Copy CLI button client-side interaction ──────────────────────────────
+ * Handled via a small inline script (no React state needed for a
+ * static copy button). Defined in global CSS for visibility.
+ */
+.copy-cli-btn.copied {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.08);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────*/
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Focus visible — accessibility ───────────────────────────────────────*/
+:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Reduce motion — respect user preference ──────────────────────────────*/
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

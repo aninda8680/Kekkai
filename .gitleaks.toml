@@ -1,0 +1,75 @@
+# .gitleaks.toml — Secret scanning configuration for the KEKKAI repo itself.
+# Run: gitleaks detect --config .gitleaks.toml
+# CI: Add gitleaks as a step before any other checks.
+#
+# It is intentionally ironic but essential to scan KEKKAI's own codebase —
+# a developer secret vault must not accidentally commit secrets to its own repo.
+
+title = "KEKKAI Secret Scanning"
+
+[allowlist]
+  description = "Global allowlist"
+  paths = [
+    # Test fixtures are expected to have fake-looking values
+    '''test.*\.ts$''',
+    '''spec.*\.ts$''',
+    # Compiled output is auto-generated
+    '''dist/''',
+    '''.next/''',
+  ]
+  regexes = [
+    # Placeholder comments (not real values)
+    '''fallback-.*-do-not-use-in-prod''',
+    # Documentation examples
+    '''example[_-]key''',
+    # Prisma migration checksums
+    '''[0-9a-f]{32}''',
+  ]
+
+[[rules]]
+  id = "kekkai-master-kek"
+  description = "KEKKAI Master KEK — must never be committed"
+  regex = '''MASTER_KEK\s*=\s*[0-9a-fA-F]{64}'''
+  tags = ["key", "kekkai", "critical"]
+
+[[rules]]
+  id = "jwt-secret-env"
+  description = "JWT signing secret"
+  regex = '''JWT_SECRET\s*=\s*\S{16,}'''
+  tags = ["key", "jwt"]
+
+[[rules]]
+  id = "database-url-with-password"
+  description = "Database URL with embedded password"
+  regex = '''postgresql://[^:]+:[^@]{8,}@'''
+  tags = ["database", "credentials"]
+
+[[rules]]
+  id = "aws-access-key"
+  description = "AWS access key"
+  regex = '''(?:AKIA|ASIA)[0-9A-Z]{16}'''
+  tags = ["aws", "cloud"]
+
+[[rules]]
+  id = "generic-api-key"
+  description = "Generic API key assignment"
+  regex = '''(?i)(?:api[_-]?key|apikey|secret[_-]?key)\s*[:=]\s*['"]{0,1}[A-Za-z0-9_\-]{20,}['"]{0,1}'''
+  tags = ["api", "generic"]
+
+[[rules]]
+  id = "private-key-header"
+  description = "PEM private key"
+  regex = '''-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'''
+  tags = ["pem", "private-key"]
+
+[[rules]]
+  id = "github-pat"
+  description = "GitHub personal access token"
+  regex = '''ghp_[A-Za-z0-9]{36}'''
+  tags = ["github", "pat"]
+
+[[rules]]
+  id = "openai-api-key"
+  description = "OpenAI API key"
+  regex = '''sk-[A-Za-z0-9]{48}'''
+  tags = ["openai", "api"]
