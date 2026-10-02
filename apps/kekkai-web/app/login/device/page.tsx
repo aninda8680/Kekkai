@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { approveDeviceCode } from '@/app/actions';
 
-export default function LoginDevicePage() {
+function DeviceLoginForm() {
   const searchParams = useSearchParams();
   const prefilled = searchParams.get('code') || '';
 
@@ -169,5 +169,19 @@ export default function LoginDevicePage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginDevicePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-neutral-950 flex flex-col justify-center items-center p-4">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <DeviceLoginForm />
+    </Suspense>
   );
 }

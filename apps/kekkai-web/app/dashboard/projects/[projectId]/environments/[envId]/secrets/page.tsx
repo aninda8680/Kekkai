@@ -8,7 +8,7 @@
  * - Masked dots animate on hover to signal "intentionally hidden" (not a missing feature)
  */
 import React from "react";
-import { getSecretsMetadata } from "../../actions";
+import { getSecretsMetadata } from "@/app/actions";
 
 interface PageProps {
   params: Promise<{ envId: string; projectId: string }>;

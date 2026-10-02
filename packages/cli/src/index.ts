@@ -37,14 +37,14 @@ const LOCAL_CONFIG_FILE = '.kekkai/config.json';
  *  4. config.apiUrl (legacy, migrated on first read)
  *  5. Default production host
  */
-const DEFAULT_HOST = 'https://app.kekkai.dev';
+const DEFAULT_HOST = 'https://kekkai.onrender.com';
 
 function getHost(): string {
-  if (process.env.KEKKAI_HOST) return process.env.KEKKAI_HOST;
-  if (process.env.KEKKAI_API_URL) return process.env.KEKKAI_API_URL;  // legacy compat
+  if (process.env.KEKKAI_HOST) return process.env.KEKKAI_HOST.trim();
+  if (process.env.KEKKAI_API_URL) return process.env.KEKKAI_API_URL.trim();  // legacy compat
   const config = loadGlobalConfig();
-  if (config.host) return config.host;
-  if (config.apiUrl) return config.apiUrl;  // migrate legacy apiUrl transparently
+  if (config.host) return config.host.trim();
+  if (config.apiUrl) return config.apiUrl.trim();  // migrate legacy apiUrl transparently
   return DEFAULT_HOST;
 }
 
