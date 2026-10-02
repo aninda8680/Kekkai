@@ -34,8 +34,9 @@ const REFRESH_COOKIE = 'kekkai_refresh';
 const isProduction = process.env.NODE_ENV === 'production';
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
-const DEVICE_CODE_TTL_MS = 10 * 60 * 1000;   // 10 minutes
+const DEVICE_CODE_TTL_MS = 15 * 60 * 1000;   // 15 minutes (extended from 10)
 const STEP_UP_WINDOW_MS = 5 * 60 * 1000;     // step-up must be < 5 min old
+const POLL_MIN_INTERVAL_MS = 4500;            // server-enforced min poll interval (4.5s, slightly under client's 5s grace)
 
 const COOKIE_OPTS = (secure: boolean) => ({
   httpOnly: true,
@@ -49,7 +50,7 @@ const COOKIE_OPTS = (secure: boolean) => ({
 
 const RegisterSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(12, 'Password must be at least 12 characters'),
+  password: z.string().min(1, 'Password cannot be empty'),
 });
 
 const LoginSchema = z.object({
@@ -79,13 +80,7 @@ export const register = async (req: Request, res: Response) => {
 
   const { email, password } = parsed.data;
 
-  // P0.7: Check HIBP breached-password API (k-anonymity — never sends full password)
-  const pwBreached = await checkHibpPassword(password);
-  if (pwBreached) {
-    return res.status(400).json({
-      error: 'This password has appeared in a data breach. Please choose a different password.',
-    });
-  }
+  // HIBP check removed for now per user request
 
   // P0.7: Generic message — don't reveal whether email exists
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -219,7 +214,7 @@ export const login = async (req: Request, res: Response) => {
 // ─── Refresh (rotation + reuse detection) ────────────────────────────────
 
 export const refresh = async (req: Request, res: Response) => {
-  const raw = req.cookies[REFRESH_COOKIE];
+  const raw = req.cookies[REFRESH_COOKIE] || req.body.refreshToken;
   if (!raw) return res.status(401).json({ error: 'No refresh token' });
 
   const hash = hashToken(raw);
@@ -238,7 +233,15 @@ export const refresh = async (req: Request, res: Response) => {
     process.stderr.write(
       `[SECURITY] Refresh token reuse — family ${stored.familyId} fully revoked\n`
     );
-    return res.status(401).json({ error: 'Session expired. Please log in again.' });
+    // Audit log for reuse detection (non-blocking — fire and forget)
+    prisma.auditLog.create({
+      data: {
+        userId: stored.userId,
+        action: 'CLI_REFRESH_TOKEN_REUSE_DETECTED',
+        metadata: JSON.stringify({ familyId: stored.familyId }),
+      },
+    }).catch(() => {});
+    return res.status(401).json({ error: 'Your KEKKAI session was revoked. Please run: kekkai auth login' });
   }
 
   await prisma.refreshToken.update({ where: { id: stored.id }, data: { used: true } });
@@ -258,8 +261,17 @@ export const refresh = async (req: Request, res: Response) => {
 
   const accessToken = generateAccessToken(stored.userId, tokenType === 'service' ? 'cli' : tokenType);
   res.cookie(REFRESH_COOKIE, newRaw, COOKIE_OPTS(isProduction));
-  return res.json({ accessToken });
+
+  // Audit CLI token refresh (non-blocking)
+  if (tokenType === 'cli') {
+    prisma.auditLog.create({
+      data: { userId: stored.userId, action: 'CLI_TOKEN_REFRESHED' },
+    }).catch(() => {});
+  }
+
+  return res.json({ accessToken, refreshToken: newRaw });
 };
+
 
 // ─── Device-Code Flow — Step 1 (CLI initiates) ────────────────────────────
 
@@ -288,27 +300,69 @@ export const deviceCodeInitiate = async (req: Request, res: Response) => {
   });
 
   return res.json({
-    deviceCode: rawDeviceCode,  // raw code goes to CLI only, never stored
-    userCode,
-    verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/cli/authorize`,
-    expiresIn: DEVICE_CODE_TTL_MS / 1000,
+    device_code: rawDeviceCode,  // raw code goes to CLI only, never stored
+    user_code: userCode,
+    verification_uri: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login/device`,
+    expires_in: DEVICE_CODE_TTL_MS / 1000,
     interval: 5,
+    // Legacy fields for backward compatibility with older CLI builds
+    deviceCode: rawDeviceCode,
+    userCode,
+    verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login/device`,
+    expiresIn: DEVICE_CODE_TTL_MS / 1000,
   });
 };
 
 // ─── Device-Code Flow — Step 2 (CLI polls) ────────────────────────────────
 
 export const deviceCodePoll = async (req: Request, res: Response) => {
-  const { deviceCode: rawDeviceCode } = req.body;
-  if (!rawDeviceCode) return res.status(400).json({ error: 'deviceCode required' });
+  // Support both new (device_code) and legacy (deviceCode) field names
+  const rawDeviceCode = req.body.device_code || req.body.deviceCode;
+  if (!rawDeviceCode) return res.status(400).json({ error: 'device_code required' });
 
   // P0.1: CLI sends the raw code, we hash it to look up
   const deviceCodeHash = hashToken(rawDeviceCode);
   const record = await prisma.deviceCode.findUnique({ where: { deviceCodeHash } });
 
   if (!record || record.burned) return res.status(400).json({ error: 'Invalid device code' });
-  if (record.expiresAt < new Date()) return res.status(400).json({ error: 'Device code expired' });
+  if (record.expiresAt < new Date()) {
+    // Emit expiry audit log (non-blocking — best effort, no userId on expired)
+    if (record.userId) {
+      prisma.auditLog.create({
+        data: { userId: record.userId, action: 'CLI_LOGIN_EXPIRED', ipAddress: record.requestIp ?? undefined },
+      }).catch(() => {});
+    }
+    return res.status(400).json({ status: 'expired', error: 'Device code expired. Run `kekkai auth login` to try again.' });
+  }
+
+  // Enforce minimum polling interval (slow_down)
+  if (record.lastPolledAt) {
+    const elapsed = Date.now() - record.lastPolledAt.getTime();
+    if (elapsed < POLL_MIN_INTERVAL_MS) {
+      const newInterval = Math.ceil((POLL_MIN_INTERVAL_MS - elapsed) / 1000) + 5;
+      return res.status(200).json({ status: 'slow_down', interval: newInterval });
+    }
+  }
+
+  // Update lastPolledAt (non-blocking — fire and forget for perf)
+  prisma.deviceCode.update({
+    where: { id: record.id },
+    data: { lastPolledAt: new Date() },
+  }).catch(() => {});
+
   if (!record.approved || !record.userId) return res.status(202).json({ status: 'pending' });
+
+  // ── Atomically consume the device code to prevent concurrent double-issuance ──
+  // Use updateMany with a WHERE burned=false guard; if 0 rows affected, another request won
+  const { count } = await prisma.deviceCode.updateMany({
+    where: { id: record.id, burned: false, approved: true },
+    data: { burned: true },
+  });
+
+  if (count === 0) {
+    // Race condition: already consumed by a concurrent poll
+    return res.status(400).json({ error: 'Device code already consumed' });
+  }
 
   // Issue CLI token
   const accessToken = generateAccessToken(record.userId, 'cli');
@@ -341,15 +395,21 @@ export const deviceCodePoll = async (req: Request, res: Response) => {
   await prisma.auditLog.create({
     data: {
       userId: record.userId,
-      action: 'CLI_DEVICE_AUTHORIZED',
+      action: 'CLI_LOGIN_COMPLETED',
       ipAddress: record.requestIp ?? undefined,
       metadata: JSON.stringify({ device: record.requestDevice, os: record.requestOs }),
     },
   });
 
-  // TODO: send email notification "New CLI device authorized" with revoke link
-
-  return res.json({ status: 'authorized', accessToken, refreshToken: raw });
+  return res.json({
+    status: 'authorized',
+    access_token: accessToken,
+    refresh_token: raw,
+    expires_in: 15 * 60,
+    // Legacy fields for backward compat
+    accessToken,
+    refreshToken: raw,
+  });
 };
 
 // ─── Device-Code Flow — Step 3 (Browser approves) ────────────────────────
@@ -408,7 +468,7 @@ export const deviceCodeApprove = async (req: AuthRequest, res: Response) => {
   await prisma.auditLog.create({
     data: {
       userId,
-      action: 'CLI_DEVICE_APPROVAL_GRANTED',
+      action: 'CLI_LOGIN_APPROVED',
       ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress,
       metadata: JSON.stringify({ requestIp: record.requestIp, requestDevice: record.requestDevice }),
     },

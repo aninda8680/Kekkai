@@ -11,6 +11,7 @@
  *  7. Global error handler (sanitized errors)
  *  8. Graceful shutdown
  */
+import 'dotenv/config';
 import { installRedactingLogger } from './middleware/redactLogger';
 
 // ① Redacting logger first
@@ -47,6 +48,7 @@ if (!envParsed.success) {
 import './crypto/kek';
 
 import authRoutes from './routes/auth.routes';
+import oauthRoutes from './routes/oauth.routes';
 import projectsRoutes from './routes/projects.routes';
 import syncRoutes from './routes/sync.routes';
 import auditRoutes from './routes/audit.routes';
@@ -101,7 +103,8 @@ app.use(express.json({ limit: '256kb' }));
 app.use(cookieParser());
 
 // ── Routes ──
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);       // Legacy + web auth routes
+app.use('/oauth', oauthRoutes);         // Canonical OAuth routes for new CLI
 app.use('/api/projects', projectsRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/audit', auditRoutes);
@@ -109,6 +112,7 @@ app.use('/api/sessions', sessionsRoutes);
 app.use('/api', tokensRoutes);  // /api/projects/:projectId/tokens
 
 // ── Health / Readiness ──
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));   // Simple alias for CLI doctor
 app.get('/healthz', (_req, res) => res.json({ status: 'ok' }));
 app.get('/readyz', async (_req, res) => {
   try {
@@ -130,7 +134,16 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 // ── Graceful shutdown ──
 const server = app.listen(PORT, () => {
-  process.stdout.write(`[KEKKAI] API listening on port ${PORT} (${process.env.NODE_ENV})\n`);
+  console.log(`
+===================================================
+🚀 KEKKAI Development Environment is Ready!
+===================================================
+🌐 Frontend (Next.js) : http://localhost:3000
+⚙️  Backend API        : http://localhost:${PORT}
+🗄️  Database (Postgres): localhost:5432
+⚡ Cache (Redis)      : localhost:6379
+===================================================
+`);
 });
 
 async function gracefulShutdown(signal: string) {

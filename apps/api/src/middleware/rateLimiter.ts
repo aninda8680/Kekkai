@@ -63,6 +63,7 @@ const sharedOpts = {
   windowMs: 15 * 60 * 1000,
   standardHeaders: 'draft-8' as const,
   legacyHeaders: false,
+  validate: false, // Prevents express-rate-limit from throwing IPv6 validation errors
   store,
   handler: (_req: Request, res: Response) => {
     res.status(429).json({ error: 'Too many requests. Please slow down.' });

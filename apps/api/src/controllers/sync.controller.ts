@@ -29,7 +29,7 @@ const PushSchema = z.object({
 });
 
 const PullSchema = z.object({
-  environmentId: z.string().uuid(),
+  environmentId: z.string().uuid().optional(),
 });
 
 async function getOrCreateDek(projectId: string): Promise<Buffer> {
@@ -152,7 +152,8 @@ export const syncPull = async (req: AuthRequest, res: Response) => {
   const parsed = PullSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid input' });
 
-  const { environmentId } = parsed.data;
+  const environmentId = parsed.data.environmentId || req.user?.serviceEnvId;
+  if (!environmentId) return res.status(400).json({ error: 'environmentId required' });
 
   const projectId = await getProjectIdFromEnvironment(environmentId);
   if (!projectId) return res.status(404).json({ error: 'Environment not found' });

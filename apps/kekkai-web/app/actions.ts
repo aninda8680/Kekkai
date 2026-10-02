@@ -62,6 +62,30 @@ export async function login(formData: FormData) {
   redirect('/dashboard');
 }
 
+export async function registerUser(formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
+
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match' };
+  }
+
+  const res = await fetch(`${API_URL}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
+    return { error: errorData.error || 'Registration failed' };
+  }
+
+  // Automatically log in after registration
+  return login(formData);
+}
+
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete('kekkai_access_token');

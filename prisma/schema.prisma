@@ -82,6 +82,8 @@ model DeviceCode {
   // Step-up auth reference: approving requires a fresh password/TOTP check (max 5min old)
   stepUpVerifiedAt DateTime?
   stepUpType      String?  // "password" | "totp"
+  // Poll throttling: track last poll time to enforce minimum interval (slow_down)
+  lastPolledAt    DateTime?
   // Once approved, link to the CLI device record
   cliDevice       CliDevice? @relation("DeviceCodeToCliDevice")
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)

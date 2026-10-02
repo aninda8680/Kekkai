@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { login } from "../actions";
+import { registerUser } from "../actions";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setError(null);
     setLoading(true);
-    const result = await login(formData);
+    const result = await registerUser(formData);
     if (result?.error) {
       setError(result.error);
       setLoading(false);
@@ -33,8 +33,8 @@ export default function LoginPage() {
               <span className="font-bold text-xl text-white">K</span>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome to KEKKAI</h1>
-          <p className="text-gray-400">Log in to access your dashboard.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Create an Account</h1>
+          <p className="text-gray-400">Join KEKKAI and secure your workflow.</p>
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl">
@@ -57,12 +57,20 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-300">Password</label>
-                <Link href="#" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Forgot password?</Link>
-              </div>
+              <label className="text-sm font-medium text-gray-300">Password</label>
               <input 
                 name="password"
+                type="password" 
+                required
+                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                placeholder="••••••••••••••••"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Confirm Password</label>
+              <input 
+                name="confirmPassword"
                 type="password" 
                 required
                 className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
@@ -75,13 +83,13 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition-all active:scale-[0.98] mt-4 disabled:opacity-70"
             >
-              {loading ? "Logging in..." : "Continue"}
+              {loading ? "Creating account..." : "Sign up"}
             </button>
 
             <p className="text-center text-sm text-gray-400 mt-6">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-indigo-400 hover:text-indigo-300 transition-colors">
-                Sign up
+              Already have an account?{" "}
+              <Link href="/login" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+                Log in
               </Link>
             </p>
           </form>

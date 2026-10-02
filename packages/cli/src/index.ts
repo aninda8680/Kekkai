@@ -23,15 +23,47 @@ import { execSync, spawn } from 'node:child_process';
 
 // ─── Configuration ─────────────────────────────────────────────────────────
 
-const API_URL = process.env.KEKKAI_API_URL || 'https://api.kekkai.io';
+let globalConfigCache: GlobalConfig | null = null;
 const CONFIG_DIR = path.join(os.homedir(), '.kekkai');
 const GLOBAL_CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 const LOCAL_CONFIG_FILE = '.kekkai/config.json';
 
+/**
+ * Single source of truth for the KEKKAI host.
+ * Priority order:
+ *  1. KEKKAI_HOST env var (overrides everything)
+ *  2. KEKKAI_API_URL env var (legacy, deprecated)
+ *  3. config.host (saved after kekkai auth login)
+ *  4. config.apiUrl (legacy, migrated on first read)
+ *  5. Default production host
+ */
+const DEFAULT_HOST = 'https://app.kekkai.dev';
+
+function getHost(): string {
+  if (process.env.KEKKAI_HOST) return process.env.KEKKAI_HOST;
+  if (process.env.KEKKAI_API_URL) return process.env.KEKKAI_API_URL;  // legacy compat
+  const config = loadGlobalConfig();
+  if (config.host) return config.host;
+  if (config.apiUrl) return config.apiUrl;  // migrate legacy apiUrl transparently
+  return DEFAULT_HOST;
+}
+
+/** The URL the CLI calls for API requests. */
+function getApiUrl(): string {
+  return getHost();
+}
+
 interface GlobalConfig {
+  host?: string;           // canonical KEKKAI host (replaces apiUrl)
+  apiUrl?: string;         // DEPRECATED — kept for backward compat, migrated on read
+  user?: {
+    id: string;
+    email: string;
+  };
   accessToken?: string;
   refreshToken?: string;
-  email?: string;
+  expiresAt?: number;      // ms timestamp for auth status without network call
+  email?: string;          // DEPRECATED — kept for backward compat (use user.email)
 }
 
 interface LocalConfig {
@@ -49,10 +81,12 @@ function ensureConfigDir(): void {
 }
 
 function loadGlobalConfig(): GlobalConfig {
+  if (globalConfigCache) return globalConfigCache;
   ensureConfigDir();
   if (!fs.existsSync(GLOBAL_CONFIG_PATH)) return {};
   try {
     const c = JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf8'));
+    globalConfigCache = c;
     return c;
   } catch { return {}; }
 }
@@ -60,6 +94,7 @@ function loadGlobalConfig(): GlobalConfig {
 function saveGlobalConfig(config: GlobalConfig): void {
   ensureConfigDir();
   fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(config, null, 2), { mode: 0o600 });
+  globalConfigCache = config;
 }
 
 function loadLocalConfig(): LocalConfig | null {
@@ -74,9 +109,10 @@ function saveLocalConfig(config: LocalConfig): void {
 }
 
 function requireToken(): string {
+  if (process.env.KEKKAI_TOKEN) return process.env.KEKKAI_TOKEN;
   const config = loadGlobalConfig();
   if (!config.accessToken) {
-    console.error(chalk.red('✗ Not logged in. Run: kekkai login'));
+    console.error(chalk.red('✗ Not logged in. Run: kekkai auth login'));
     process.exit(1);
   }
   return config.accessToken;
@@ -85,6 +121,16 @@ function requireToken(): string {
 function requireLocalConfig(): LocalConfig {
   const config = loadLocalConfig();
   if (!config) {
+    console.error(chalk.red('✗ No project linked. Run: kekkai init'));
+    process.exit(1);
+  }
+  return config;
+}
+
+function getOptionalLocalConfig(): LocalConfig | null {
+  const config = loadLocalConfig();
+  if (!config) {
+    if (process.env.KEKKAI_TOKEN) return null; // allow fallback for service tokens
     console.error(chalk.red('✗ No project linked. Run: kekkai init'));
     process.exit(1);
   }
@@ -103,7 +149,40 @@ async function apiFetch(
     ...(token && { Authorization: `Bearer ${token}` }),
     ...(options.headers as Record<string, string>),
   };
-  return fetch(`${API_URL}${endpoint}`, { ...options, headers });
+  let res = await fetch(`${getApiUrl()}${endpoint}`, { ...options, headers });
+
+  // Auto-refresh on 401 (once), unless using a static service token override
+  if (res.status === 401 && token && !process.env.KEKKAI_TOKEN) {
+    const config = loadGlobalConfig();
+    if (config.refreshToken) {
+      // Use the new /oauth/token/refresh endpoint; fall back to legacy /api/auth/refresh
+      const refreshRes = await fetch(`${getApiUrl()}/oauth/token/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: config.refreshToken }),
+      }).catch(() => null);
+
+      const refreshData = refreshRes?.ok ? await refreshRes.json().catch(() => null) : null;
+
+      if (refreshData?.accessToken) {
+        config.accessToken = refreshData.accessToken;
+        if (refreshData.refreshToken) config.refreshToken = refreshData.refreshToken;
+        if (refreshData.expiresIn) config.expiresAt = Date.now() + refreshData.expiresIn * 1000;
+        saveGlobalConfig(config);
+        // Retry original request with new token
+        headers['Authorization'] = `Bearer ${refreshData.accessToken}`;
+        res = await fetch(`${getApiUrl()}${endpoint}`, { ...options, headers });
+      } else {
+        // Refresh failed — clear stale credentials to force re-login
+        config.accessToken = undefined;
+        config.refreshToken = undefined;
+        config.expiresAt = undefined;
+        saveGlobalConfig(config);
+      }
+    }
+  }
+
+  return res;
 }
 
 // ─── Gitignore Check ───────────────────────────────────────────────────────
@@ -168,98 +247,360 @@ program
   .description(chalk.bold('KEKKAI') + ' — Secure developer secret vault')
   .version('1.0.0');
 
-// ─── LOGIN (device-code flow) ──────────────────────────────────────────────
+// ─── AUTH COMMAND GROUP ────────────────────────────────────────────────────
 
-program
-  .command('login')
-  .description('Authenticate with KEKKAI (device-code flow — no password in CLI)')
-  .action(async () => {
-    const spinner = ora('Initiating device-code flow...').start();
+const authCmd = program.command('auth').description('Manage authentication');
 
-    const res = await apiFetch('/api/auth/device/code', { method: 'POST' });
-    if (!res.ok) { spinner.fail('Failed to start login flow'); process.exit(1); }
+// ─── auth login ────────────────────────────────────────────────────────────
 
-    const { deviceCode, userCode, verificationUrl, expiresIn, interval } = await res.json();
-    spinner.stop();
+async function runAuthLogin(opts: {
+  noBrowser?: boolean;
+  local?: boolean;
+  api?: string;
+  host?: string;
+}) {
+  // ── Resolve the host for this session ──
+  let sessionHost: string | undefined;
+  if (opts.host)  sessionHost = opts.host;
+  if (opts.api)   sessionHost = opts.api;   // --api is a legacy alias for --host
+  if (opts.local) sessionHost = 'http://localhost:4000';
 
+  if (sessionHost) {
+    process.env.KEKKAI_HOST = sessionHost;
+  }
+
+  const apiUrl = getApiUrl();
+
+  // ── Step 1: Initiate device-code flow ──
+  const spinner = ora({ text: `Connecting to ${chalk.cyan(apiUrl)}...`, color: 'cyan' }).start();
+
+  let initData: {
+    device_code: string; user_code: string; verification_uri: string;
+    expires_in: number; interval: number;
+    deviceCode?: string; userCode?: string; expiresIn?: number;
+    verificationUrl?: string;
+  };
+
+  try {
+    const res = await fetch(`${apiUrl}/oauth/device/code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      spinner.fail('Failed to start authentication flow');
+      process.exit(1);
+    }
+    initData = await res.json();
+  } catch {
+    spinner.fail('Cannot reach KEKKAI server. Check your connection or run with --local.');
+    process.exit(1);
+  }
+
+  spinner.stop();
+
+  // Normalize between new and legacy response shapes
+  const deviceCode     = initData.device_code  || initData.deviceCode!;
+  const userCode       = initData.user_code     || initData.userCode!;
+  const expiresIn      = initData.expires_in    || initData.expiresIn!;
+  const serverInterval = initData.interval || 5;
+  // The server knows the correct frontend URL — always use it for the browser
+  const browserUrl     = initData.verification_uri || initData.verificationUrl
+    || `http://localhost:3000/login/device`;
+
+  // ── Step 2: Display GitHub-style prompt ──
+  console.log('');
+  console.log(chalk.bold('KEKKAI Authentication'));
+  console.log('');
+  console.log('First, copy your one-time code:');
+  console.log('');
+  console.log('  ' + chalk.bgCyan.black.bold(` ${userCode} `));
+  console.log('');
+
+  if (opts.noBrowser) {
+    console.log('Open this URL in your browser:');
     console.log('');
-    console.log(chalk.bold('  Open the following URL in your browser to approve this login:'));
+    console.log('  ' + chalk.cyan(browserUrl));
     console.log('');
-    console.log(chalk.cyan(`  ${verificationUrl}`));
+    console.log('Enter the code above when prompted.');
+  } else {
+    console.log('Opening:');
+    console.log('  ' + chalk.cyan(browserUrl));
     console.log('');
-    console.log(chalk.bold('  Enter code: ') + chalk.yellow.bold(userCode));
-    console.log('');
-    console.log(chalk.gray(`  (Expires in ${Math.round(expiresIn / 60)} minutes)`));
-    console.log('');
+    try {
+      if (process.platform === 'win32') execSync(`start "" "${browserUrl}"`, { stdio: 'ignore' });
+      else if (process.platform === 'darwin') execSync(`open "${browserUrl}"`, { stdio: 'ignore' });
+      else execSync(`xdg-open "${browserUrl}"`, { stdio: 'ignore' });
+    } catch {
+      console.log(chalk.gray('  (Could not open browser automatically — please open the URL above manually)'));
+    }
+  }
 
-    const pollSpinner = ora('Waiting for browser approval...').start();
-    const pollInterval = (interval || 5) * 1000;
-    const deadline = Date.now() + expiresIn * 1000;
+  // ── Step 3: Poll for authorization ──
+  const pollSpinner = ora({ text: 'Waiting for authentication...', color: 'cyan' }).start();
+  let pollInterval = serverInterval * 1000;
+  const deadline = Date.now() + expiresIn * 1000;
 
-    while (Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, pollInterval));
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, pollInterval));
 
-      const pollRes = await apiFetch('/api/auth/device/token', {
+    let pollRes: Response;
+    try {
+      pollRes = await fetch(`${apiUrl}/oauth/device/token`, {
         method: 'POST',
-        body: JSON.stringify({ deviceCode }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_code: deviceCode }),
       });
-
-      if (pollRes.status === 202) continue; // still pending
-
-      if (pollRes.ok) {
-        const data = await pollRes.json();
-        if (data.status === 'authorized') {
-          const config = loadGlobalConfig();
-          config.accessToken = data.accessToken;
-          if (data.refreshToken) config.refreshToken = data.refreshToken;
-          saveGlobalConfig(config);
-          pollSpinner.succeed(chalk.green('✓ Logged in successfully! Token saved to ~/.kekkai/config.json'));
-          return;
-        }
-      } else {
-        pollSpinner.fail('Login failed');
-        process.exit(1);
-      }
+    } catch {
+      continue; // Network blip — keep trying until deadline
     }
 
-    pollSpinner.fail('Device code expired. Run kekkai login again.');
-    process.exit(1);
+    if (pollRes.status === 202) continue; // pending
+
+    let pollData: Record<string, unknown>;
+    try { pollData = await pollRes.json(); } catch { continue; }
+
+    // slow_down: server wants us to back off
+    if (pollData.status === 'slow_down' && typeof pollData.interval === 'number') {
+      pollInterval = (pollData.interval as number) * 1000;
+      continue;
+    }
+
+    if (pollData.status === 'expired') {
+      pollSpinner.fail('Authentication request expired.');
+      console.log('');
+      console.log(chalk.gray(`Run ${chalk.bold('kekkai auth login')} to try again.`));
+      process.exit(1);
+    }
+
+    if (pollRes.ok && pollData.status === 'authorized') {
+      const accessToken  = (pollData.access_token  || pollData.accessToken)  as string;
+      const refreshToken = (pollData.refresh_token || pollData.refreshToken) as string;
+      const tokenExpiresIn = (pollData.expires_in || 900) as number;
+
+      // ── Step 4: Fetch user info ──
+      pollSpinner.text = 'Fetching account info...';
+      let userEmail = '';
+      let userId = '';
+      try {
+        const meRes = await fetch(`${apiUrl}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          userEmail = me.email || '';
+          userId    = me.id    || '';
+        }
+      } catch { /* non-fatal */ }
+
+      // ── Step 5: Save credentials ──
+      const config = loadGlobalConfig();
+      config.host         = sessionHost || config.host || DEFAULT_HOST;
+      config.accessToken  = accessToken;
+      config.refreshToken = refreshToken;
+      config.expiresAt    = Date.now() + tokenExpiresIn * 1000;
+      if (userEmail) config.user = { id: userId, email: userEmail };
+      if (userEmail) config.email = userEmail;  // legacy compat
+      if (config.apiUrl && config.host) delete config.apiUrl;  // migrate legacy field
+      saveGlobalConfig(config);
+
+      pollSpinner.succeed(chalk.green('✓ Authentication successful.'));
+      console.log('');
+      if (userEmail) console.log(`Logged in as ${chalk.bold(userEmail)}`);
+      return;
+    }
+
+    if (!pollRes.ok) {
+      pollSpinner.fail('Authentication failed.');
+      const errMsg = typeof pollData.error === 'string' ? pollData.error : '';
+      if (errMsg) console.error(chalk.red(`  ${errMsg}`));
+      process.exit(1);
+    }
+  }
+
+  pollSpinner.fail('Authentication request expired.');
+  console.log(chalk.gray(`Run ${chalk.bold('kekkai auth login')} to try again.`));
+  process.exit(1);
+}
+
+authCmd
+  .command('login')
+  .description('Authenticate with KEKKAI (device-code flow — no password in CLI)')
+  .option('--no-browser', 'Print the URL instead of opening a browser')
+  .option('--local',      'Use local development server (http://localhost:4000)')
+  .option('--api <url>',  'Use a custom API URL (deprecated: use --host)')
+  .option('--host <url>', 'Use a custom KEKKAI host URL')
+  .action(async (opts) => runAuthLogin(opts));
+
+// ─── auth status ───────────────────────────────────────────────────────────
+
+authCmd
+  .command('status')
+  .description('Show current authentication state')
+  .action(async () => {
+    const config = loadGlobalConfig();
+
+    console.log('');
+    console.log(chalk.bold('KEKKAI Authentication'));
+    console.log('');
+
+    if (!config.accessToken) {
+      console.log(chalk.yellow('Not authenticated.'));
+      console.log('');
+      console.log('Run:');
+      console.log('');
+      console.log(`  ${chalk.bold('kekkai auth login')}`);
+      console.log('');
+      return;
+    }
+
+    const host    = config.host || config.apiUrl || DEFAULT_HOST;
+    const account = config.user?.email || config.email || chalk.gray('(unknown)');
+
+    let statusLine: string;
+    let expiresLine = '';
+
+    if (config.expiresAt) {
+      const minsLeft = Math.round((config.expiresAt - Date.now()) / 60_000);
+      if (minsLeft > 0) {
+        statusLine  = chalk.green('Authenticated');
+        expiresLine = minsLeft === 1 ? 'in 1 minute'
+          : minsLeft < 60 ? `in ${minsLeft} minutes`
+          : `in ${Math.round(minsLeft / 60)} hours`;
+      } else {
+        statusLine  = chalk.yellow('Token expired (will auto-refresh on next command)');
+        expiresLine = 'expired';
+      }
+    } else {
+      statusLine = chalk.green('Authenticated');
+    }
+
+    const label = (s: string) => chalk.bold(s.padEnd(10));
+    console.log(`${label('Host')}   ${chalk.cyan(host)}`);
+    console.log(`${label('Account')}${account}`);
+    console.log(`${label('Status')} ${statusLine}`);
+    if (expiresLine) console.log(`${label('Expires')}${expiresLine}`);
+    console.log('');
   });
 
-// ─── LOGOUT ───────────────────────────────────────────────────────────────
+// ─── auth logout ───────────────────────────────────────────────────────────
 
-program
+async function runAuthLogout() {
+  const config = loadGlobalConfig();
+  const token  = config.accessToken || process.env.KEKKAI_TOKEN;
+
+  // 1. Attempt server-side revocation (gracefully ignore network errors)
+  if (token && config.refreshToken) {
+    try {
+      await fetch(`${getApiUrl()}/api/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: config.refreshToken }),
+      });
+    } catch { /* ignore — still clear locally */ }
+  }
+
+  // 2. Clear all local credentials and user data
+  // Do NOT preserve the host — a stale --local host would break the next login
+  saveGlobalConfig({});
+
+  console.log(chalk.green('✓ Logged out successfully.'));
+}
+
+authCmd
   .command('logout')
-  .description('Revoke CLI token locally and server-side')
+  .description('Revoke CLI session locally and on the server')
+  .action(async () => runAuthLogout());
+
+// ─── auth devices ──────────────────────────────────────────────────────────
+
+authCmd
+  .command('devices')
+  .description('List registered CLI devices for your account')
   .action(async () => {
     const token = requireToken();
-    const spinner = ora('Revoking token...').start();
+    const res   = await apiFetch('/api/sessions', {}, token);
+    if (!res.ok) { console.error(chalk.red('✗ Failed to fetch devices')); process.exit(1); }
 
-    try {
-      await apiFetch('/api/auth/logout', { method: 'POST' }, token);
-    } catch { /* ignore network errors — still clear locally */ }
+    const data = await res.json();
+    const cliDevices: any[] = data.cliDevices || [];
 
-    const config = loadGlobalConfig();
-    delete config.accessToken;
-    delete config.refreshToken;
-    saveGlobalConfig(config);
-    spinner.succeed('Logged out and token revoked server-side.');
+    console.log('');
+    console.log(chalk.bold('KEKKAI CLI Devices'));
+    console.log('');
+
+    if (cliDevices.length === 0) {
+      console.log(chalk.gray('No CLI devices registered.'));
+      console.log('');
+      return;
+    }
+
+    cliDevices.forEach((d: any, i: number) => {
+      const lastUsed = d.lastUsedAt ? new Date(d.lastUsedAt).toLocaleString() : 'Never';
+      const revokedLabel = d.revoked ? chalk.red(' [revoked]') : '';
+      console.log(`${chalk.cyan(i + 1)}. ${chalk.bold(d.name || 'Unknown device')}${revokedLabel}`);
+      console.log(`   Last used: ${chalk.gray(lastUsed)}`);
+      if (d.lastIp) console.log(`   IP: ${chalk.gray(d.lastIp)}`);
+      console.log(`   ID: ${chalk.gray(d.id)}`);
+      console.log('');
+    });
+
+    console.log(chalk.gray('To revoke a device: kekkai auth revoke <device-id>'));
+    console.log('');
   });
 
-// ─── WHOAMI ───────────────────────────────────────────────────────────────
+// auth revoke
+authCmd
+  .command('revoke <deviceId>')
+  .description('Revoke a specific CLI device by ID')
+  .action(async (deviceId: string) => {
+    const token = requireToken();
+    const res   = await apiFetch(`/api/sessions/cli/${deviceId}`, { method: 'DELETE' }, token);
+    if (!res.ok) { console.error(chalk.red('✗ Failed to revoke device')); process.exit(1); }
+    console.log(chalk.green(`✓ Device ${deviceId} revoked.`));
+  });
+
+// ─── BACKWARD-COMPAT ALIASES (deprecated) ─────────────────────────────────
 
 program
-  .command('whoami')
-  .description('Show the logged-in user and token information')
+  .command('login', { hidden: true })
+  .description('[Deprecated] Use: kekkai auth login')
+  .option('--local',       'Use local development server')
+  .option('--api <url>',   'Use a custom API URL')
+  .option('--host <url>',  'Use a custom KEKKAI host URL')
+  .option('--no-browser',  'Print the URL instead of opening a browser')
+  .action(async (opts) => {
+    process.stderr.write(chalk.yellow('\n⚠  kekkai login is deprecated. Use: kekkai auth login\n\n'));
+    await runAuthLogin(opts);
+  });
+
+program
+  .command('logout', { hidden: true })
+  .description('[Deprecated] Use: kekkai auth logout')
   .action(async () => {
+    process.stderr.write(chalk.yellow('\n⚠  kekkai logout is deprecated. Use: kekkai auth logout\n\n'));
+    await runAuthLogout();
+  });
+
+program
+  .command('whoami', { hidden: true })
+  .description('[Deprecated] Use: kekkai auth status')
+  .action(async () => {
+    process.stderr.write(chalk.yellow('\n⚠  kekkai whoami is deprecated. Use: kekkai auth status\n\n'));
+    const config = loadGlobalConfig();
+    if (!config.accessToken) {
+      console.error(chalk.red('✗ Not authenticated. Run: kekkai auth login'));
+      process.exit(1);
+    }
     const token = requireToken();
     const res = await apiFetch('/api/auth/me', {}, token);
-    if (!res.ok) { console.error(chalk.red('✗ Session invalid. Run: kekkai login')); process.exit(1); }
+    if (!res.ok) { console.error(chalk.red('✗ Session invalid. Run: kekkai auth login')); process.exit(1); }
     const { email, id } = await res.json();
-    console.log(chalk.bold('User: ') + email);
-    console.log(chalk.bold('ID:   ') + id);
+    console.log(chalk.bold('User:   ') + email);
+    console.log(chalk.bold('ID:     ') + id);
     console.log(chalk.bold('Config: ') + GLOBAL_CONFIG_PATH);
   });
+
+
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
 
@@ -417,18 +758,19 @@ program
   .option('--yes', 'Skip confirmation')
   .action(async (opts) => {
     const token = requireToken();
-    const local = requireLocalConfig();
+    const local = getOptionalLocalConfig();
     warnGitignore('.env');
 
     const spinner = ora('Fetching secrets...').start();
+    const body = local ? JSON.stringify({ environmentId: local.environmentId }) : '{}';
     const res = await apiFetch('/api/sync/pull', {
       method: 'POST',
-      body: JSON.stringify({ environmentId: local.environmentId }),
+      body,
     }, token);
     spinner.stop();
 
     if (!res.ok) {
-      console.error(chalk.red('✗ Pull failed'));
+      console.error(chalk.red('✗ Pull failed: ' + (await res.json()).error || 'Unknown error'));
       process.exit(1);
     }
 
@@ -447,7 +789,8 @@ program
 
     const changes = diff.filter((d) => d.status !== 'unchanged');
 
-    console.log(chalk.bold(`\nVault (${local.environmentName}) vs local ${opts.env}:\n`));
+    const envName = local ? local.environmentName : 'Service Token Environment';
+    console.log(chalk.bold(`\nVault (${envName}) vs local ${opts.env}:\n`));
     for (const { key, status } of diff) {
       if (status === 'added') console.log(`  ${chalk.green('+')} ${chalk.green(key.padEnd(30))} ${chalk.gray('(new from vault)')}`);
       else if (status === 'changed') console.log(`  ${chalk.yellow('~')} ${chalk.yellow(key.padEnd(30))} ${chalk.gray('(differs)')}`);
@@ -476,12 +819,13 @@ program
   .argument('<command...>', 'Command to run')
   .action(async (commandArgs, opts) => {
     const token = requireToken();
-    const local = requireLocalConfig();
+    const local = getOptionalLocalConfig();
 
     const spinner = ora('Fetching secrets...').start();
+    const body = local ? JSON.stringify({ environmentId: local.environmentId }) : '{}';
     const res = await apiFetch('/api/sync/pull', {
       method: 'POST',
-      body: JSON.stringify({ environmentId: local.environmentId }),
+      body,
     }, token);
     spinner.stop();
 
@@ -934,11 +1278,11 @@ program
 
     // 4. Network reachability
     try {
-      const res = await fetch(`${API_URL}/health`);
-      if (res.ok) console.log(chalk.green(`✓ API reachable (${API_URL})`));
+      const res = await fetch(`${getApiUrl()}/health`);
+      if (res.ok) console.log(chalk.green(`✓ API reachable (${getApiUrl()})`));
       else { console.log(chalk.red(`✗ API returned ${res.status}`)); issues++; }
     } catch {
-      console.log(chalk.red(`✗ Cannot reach API at ${API_URL}`));
+      console.log(chalk.red(`✗ Cannot reach API at ${getApiUrl()}`));
       console.log(chalk.gray('  Check your internet connection or KEKKAI_API_URL env var\n'));
       issues++;
     }
