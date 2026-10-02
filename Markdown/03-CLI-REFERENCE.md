@@ -4,23 +4,38 @@ Design principle: the CLI is where plaintext is allowed to exist (in memory, bri
 developer's own machine). Every command below is designed to be safe-by-default (confirmations,
 dry-runs, diffs) so a sleepy 2am `kekkai push` doesn't clobber production.
 
-## Core commands (from the original spec — kept, tightened)
+## Authentication Commands (`kekkai auth`)
+
+| Command | Flags | Purpose |
+|---|---|---|
+| `kekkai auth login` | `[--no-browser]` `[--local]` `[--host <url>]` | GitHub-style device-code flow: opens browser, no password ever touches the CLI process |
+| `kekkai auth status` | — | Shows host, account, session status, and access token expiry |
+| `kekkai auth logout` | — | Revokes session server-side and clears local credentials from `~/.kekkai/config.json` |
+| `kekkai auth devices` | — | Lists registered CLI devices with last-used timestamps, IP, and device IDs |
+| `kekkai auth revoke <id>` | `<id>` | Revokes a specific CLI device by ID |
+
+### Deprecated Aliases (Backward-Compatible)
+| Legacy Command | Modern Replacement | Behavior |
+|---|---|---|
+| `kekkai login` | `kekkai auth login` | ⚠ Emits deprecation warning and routes to `auth login` |
+| `kekkai logout` | `kekkai auth logout` | ⚠ Emits deprecation warning and routes to `auth logout` |
+| `kekkai whoami` | `kekkai auth status` | ⚠ Emits deprecation warning and routes to `auth status` |
+
+## Core secret & workspace commands (from the original spec — kept, tightened)
 
 | Command | What's new / tightened |
 |---|---|
-| `kekkai login` | Device-code flow: opens browser, no password ever touches the CLI process |
 | `kekkai init` | Now also detects existing `.kekkai/config.json` and offers `--force` to relink |
 | `kekkai push` | Adds a **diff preview** before upload (see below) instead of blind overwrite |
 | `kekkai pull` | Adds `--dry-run` and always shows a diff against the current local `.env` before writing |
 | `kekkai run <cmd>` | Adds `--env` flag to run against a non-default environment without switching context |
 
-## New commands to add (user-friendliness + real-world workflow gaps)
+## Workspace, secret & team management commands
 
 | Command | Purpose |
 |---|---|
 | `kekkai status` | Shows linked project/environment, drift between local `.env` and vault (added/removed/changed keys), last sync time — the single most useful "what state am I in" command |
 | `kekkai diff` | Explicit diff between local `.env` and the vault without pushing or pulling |
-| `kekkai whoami` | Shows the logged-in user, active device token expiry, and which projects they can access |
 | `kekkai set KEY` | Interactively add/update one secret without touching the rest of `.env` |
 | `kekkai unset KEY` | Remove a single secret, with confirmation |
 | `kekkai get KEY` | Print **one** decrypted value to stdout (only place a value should ever print) — supports `--copy` to send straight to clipboard instead of the terminal, so it never even hits scrollback |
@@ -37,7 +52,6 @@ dry-runs, diffs) so a sleepy 2am `kekkai push` doesn't clobber production.
 | `kekkai scan` | Scans the working directory for likely-secret-looking values that are **not** yet tracked in KEKKAI (regex heuristics for API-key shapes, AWS key patterns, etc.) and suggests `kekkai push` candidates — this directly targets "accidentally committed a secret" |
 | `kekkai export --format sops\|docker\|k8s` | Export current environment as an encrypted SOPS file, a Docker `--env-file`, or a Kubernetes Secret manifest — bridges KEKKAI into existing pipelines without weakening the vault model |
 | `kekkai team invite <email> --role DEVELOPER` | Invite a teammate directly from the terminal |
-| `kekkai logout` | Revokes the local device token both locally and server-side (not just deleting the local file) |
 | `kekkai audit` | Tail recent audit log entries for the current project (who did what, not values) |
 
 ## Example: `kekkai push` with diff preview (the safety upgrade)
