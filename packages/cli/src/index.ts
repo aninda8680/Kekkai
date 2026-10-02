@@ -305,7 +305,7 @@ async function runAuthLogin(opts: {
   const serverInterval = initData.interval || 5;
   // The server knows the correct frontend URL — always use it for the browser
   const browserUrl     = initData.verification_uri || initData.verificationUrl
-    || `http://localhost:3000/login/device`;
+    || (opts.local ? 'http://localhost:3000/login/device' : 'https://kekkai-env.vercel.app/login/device');
 
   // ── Step 2: Display GitHub-style prompt ──
   console.log('');
