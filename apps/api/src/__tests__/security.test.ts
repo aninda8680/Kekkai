@@ -101,24 +101,21 @@ describe('P0.4 — Token-type enforcement', () => {
   });
 
   test('GET /reveal with web token → 403', async () => {
-    // First create a secret with CLI token to get an ID
-    const pushRes = await request(app)
-      .post('/api/sync/push')
-      .set('Authorization', `Bearer ${cliToken}`)
-      .send({ environmentId: devEnv.id, secrets: [{ key: 'TEST_KEY', value: 'secret-value' }] });
-    expect(pushRes.status).toBe(200);
-
-    const listRes = await request(app)
-      .get(`/api/projects/${projectA.id}/environments/${devEnv.id}/secrets`)
-      .set('Authorization', `Bearer ${webToken}`);
-    expect(listRes.status).toBe(200);
-
-    const secretId = listRes.body[0]?.id;
-    if (!secretId) return; // no secret created — skip
+    // Create secret directly via Prisma to avoid async audit logs
+    const secret = await prisma.secret.create({
+      data: { environmentId: devEnv.id, key: 'TEST_REVEAL', createdById: userA.id, updatedById: userA.id },
+    });
+    await prisma.secretVersion.create({
+      data: {
+        secretId: secret.id, version: 1, ciphertext: 'mock', nonce: 'mock', authTag: 'mock', aad: 'mock',
+        kekVersion: 'v1', createdById: userA.id,
+      },
+    });
 
     const revealRes = await request(app)
-      .get(`/api/projects/${projectA.id}/environments/${devEnv.id}/secrets/${secretId}/reveal`)
+      .get(`/api/projects/${projectA.id}/environments/${devEnv.id}/secrets/${secret.id}/reveal`)
       .set('Authorization', `Bearer ${webToken}`);
+      
     expect(revealRes.status).toBe(403);
     expect(revealRes.body).not.toHaveProperty('value');
   });

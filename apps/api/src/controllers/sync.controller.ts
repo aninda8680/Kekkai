@@ -75,14 +75,17 @@ export const syncPush = async (req: AuthRequest, res: Response) => {
 
     if (!existingSecret) {
       // New secret
-      const encrypted = encryptValue(dek, value);
       const created = await prisma.secret.create({
         data: { environmentId, key, createdById: req.user!.id, updatedById: req.user!.id },
+      });
+      const encrypted = encryptValue(dek, value, {
+        projectId, environmentId, secretId: created.id, key, version: 1
       });
       await prisma.secretVersion.create({
         data: {
           secretId: created.id, version: 1,
           ciphertext: encrypted.ciphertext, nonce: encrypted.nonce, authTag: encrypted.authTag,
+          aad: encrypted.aad,
           kekVersion: KEK_VERSION, createdById: req.user!.id,
         },
       });
@@ -108,12 +111,15 @@ export const syncPush = async (req: AuthRequest, res: Response) => {
       }
 
       // Value changed — create new version
-      const encrypted = encryptValue(dek, value);
       const nextVersion = (latestVersion?.version ?? 0) + 1;
+      const encrypted = encryptValue(dek, value, {
+        projectId, environmentId, secretId: existingSecret.id, key, version: nextVersion
+      });
       await prisma.secretVersion.create({
         data: {
           secretId: existingSecret.id, version: nextVersion,
           ciphertext: encrypted.ciphertext, nonce: encrypted.nonce, authTag: encrypted.authTag,
+          aad: encrypted.aad,
           kekVersion: KEK_VERSION, createdById: req.user!.id,
         },
       });

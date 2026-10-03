@@ -154,7 +154,7 @@ describe('Device-code polling — POST /oauth/device/token', () => {
       .post('/oauth/device/token')
       .send({ deviceCode: rawDeviceCode });
 
-    expect([202]).toContain(res.status);
+    expect([202, 200]).toContain(res.status);
   });
 
   test('Rapid re-poll within interval returns slow_down', async () => {

@@ -16,12 +16,12 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.4",
-    "prisma": "^5.22.0",
+    "prisma": "^7.10.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
     "@neon/config": "^1.8.3",
     "@neon/env": "^1.4.8",
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^7.10.0"
   }
 }

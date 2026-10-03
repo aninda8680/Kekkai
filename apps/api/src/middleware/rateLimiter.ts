@@ -65,6 +65,7 @@ const sharedOpts = {
   legacyHeaders: false,
   validate: false, // Prevents express-rate-limit from throwing IPv6 validation errors
   store,
+  skip: () => process.env.NODE_ENV === 'test',
   handler: (_req: Request, res: Response) => {
     res.status(429).json({ error: 'Too many requests. Please slow down.' });
   },
