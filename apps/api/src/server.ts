@@ -133,8 +133,10 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // ── Graceful shutdown ──
-const server = app.listen(PORT, () => {
-  console.log(`
+let server: any;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`
 ===================================================
 🚀 KEKKAI Development Environment is Ready!
 ===================================================
@@ -144,15 +146,23 @@ const server = app.listen(PORT, () => {
 ⚡ Cache (Redis)      : localhost:6379
 ===================================================
 `);
-});
+  });
+}
 
 async function gracefulShutdown(signal: string) {
   process.stdout.write(`\n[KEKKAI] ${signal} received — draining connections...\n`);
-  server.close(async () => {
+  
+  const closeDbAndExit = async () => {
     await prisma.$disconnect();
     process.stdout.write('[KEKKAI] Gracefully shut down.\n');
     process.exit(0);
-  });
+  };
+
+  if (server) {
+    server.close(closeDbAndExit);
+  } else {
+    await closeDbAndExit();
+  }
   // Force exit after 10 seconds if connections don't drain
   setTimeout(() => process.exit(1), 10_000);
 }
