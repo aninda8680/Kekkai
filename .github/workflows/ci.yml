@@ -49,6 +49,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
       - run: npm ci --workspaces
+      - run: npx prisma generate --schema ../../prisma/schema.prisma
+        working-directory: apps/api
       - run: npx tsc --noEmit
         working-directory: apps/api
       - run: npx tsc --noEmit
