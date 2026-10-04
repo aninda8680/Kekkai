@@ -291,7 +291,7 @@ describe('P0.4 — Refresh token reuse detection', () => {
     // Replay the used token via the refresh endpoint (needs cookie)
     const res = await request(app)
       .post('/api/auth/refresh')
-      .set('Cookie', `kekkai_refresh=${raw}`)
+      .set('Cookie', `cloak-env_refresh=${raw}`)
       .send();
 
     expect(res.status).toBe(401);

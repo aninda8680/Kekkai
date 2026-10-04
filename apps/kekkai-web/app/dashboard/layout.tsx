@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_12px_rgba(99,102,241,0.4)]">
               <span className="font-bold text-white text-sm">K</span>
             </div>
-            <span className="font-semibold tracking-wide text-white/90 group-hover:text-white transition-colors">KEKKAI</span>
+            <span className="font-semibold tracking-wide text-white/90 group-hover:text-white transition-colors">CLOAK-ENV</span>
           </Link>
         </div>
 
@@ -45,7 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             Use the CLI to access secret values.
           </p>
           <code className="mt-2 block text-xs text-indigo-400 font-mono bg-black/40 rounded px-2 py-1">
-            kekkai get KEY_NAME
+            cloak-env get KEY_NAME
           </code>
         </div>
 

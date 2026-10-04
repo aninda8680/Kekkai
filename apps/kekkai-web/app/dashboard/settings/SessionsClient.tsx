@@ -41,7 +41,7 @@ export function SessionsClient({
       <TypedConfirmationModal
         isOpen={!!revokeTarget}
         title={`Revoke ${revokeTarget?.type === 'web' ? 'Web Session' : 'CLI Device'}`}
-        description={`This will permanently revoke access for "${revokeTarget?.name}". The session/device will immediately lose access to KEKKAI.`}
+        description={`This will permanently revoke access for "${revokeTarget?.name}". The session/device will immediately lose access to CLOAK-ENV.`}
         confirmText="revoke"
         actionLabel="Revoke Access"
         onConfirm={handleRevoke}
@@ -65,7 +65,7 @@ export function SessionsClient({
               {cliDevices.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-neutral-500">
-                    No active CLI devices. Use <code className="bg-neutral-800 px-1 py-0.5 rounded text-xs text-neutral-300">kekkai login</code> to authorize a device.
+                    No active CLI devices. Use <code className="bg-neutral-800 px-1 py-0.5 rounded text-xs text-neutral-300">cloak-env login</code> to authorize a device.
                   </td>
                 </tr>
               ) : (

@@ -12,7 +12,7 @@ import jwt from 'jsonwebtoken';
 import { randomBytes, createHash } from 'node:crypto';
 
 const ACCESS_TOKEN_SECRET =
-  process.env.JWT_SECRET || (() => { throw new Error('[KEKKAI] JWT_SECRET env var is not set.'); })();
+  process.env.JWT_SECRET || (() => { throw new Error('[CLOAK-ENV] JWT_SECRET env var is not set.'); })();
 
 export type TokenType = 'web' | 'cli';
 

@@ -34,7 +34,7 @@ export default function RegisterPage() {
             </div>
           </Link>
           <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Create an Account</h1>
-          <p className="text-gray-400">Join KEKKAI and secure your workflow.</p>
+          <p className="text-gray-400">Join CLOAK-ENV and secure your workflow.</p>
         </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl">

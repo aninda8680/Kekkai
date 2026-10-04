@@ -18,7 +18,7 @@ const API_URL = process.env.API_URL || 'http://localhost:4000';
 
 async function getToken(): Promise<string | null> {
   const cookieStore = await cookies();
-  return cookieStore.get('kekkai_access_token')?.value ?? null;
+  return cookieStore.get('cloak-env_access_token')?.value ?? null;
 }
 
 async function apiGet(path: string) {
@@ -51,7 +51,7 @@ export async function login(formData: FormData) {
 
   const data = await res.json();
   const cookieStore = await cookies();
-  cookieStore.set('kekkai_access_token', data.accessToken, {
+  cookieStore.set('cloak-env_access_token', data.accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
@@ -88,7 +88,7 @@ export async function registerUser(formData: FormData) {
 
 export async function logout() {
   const cookieStore = await cookies();
-  cookieStore.delete('kekkai_access_token');
+  cookieStore.delete('cloak-env_access_token');
   redirect('/login');
 }
 

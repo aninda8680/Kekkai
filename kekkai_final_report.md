@@ -1,4 +1,4 @@
-# KEKKAI — Final Post-Launch Security & Implementation Report
+# CLOAK-ENV — Final Post-Launch Security & Implementation Report
 
 **Date:** 2026-09-28
 **Status:** FULLY COMPLETED (Phases 1-6 + P0 Hardening & P1 Frontend Deliverables)
@@ -15,7 +15,7 @@ We completed the comprehensive security hardening protocol specified in `06 hard
 
 ### 1.2 Access & Authentication Control
 - **Fail-Closed Audit Log:** Rewrote `secrets.controller.ts` to utilize the new `writeAuditLogTransactional` method. Plaintext values are never extracted from the database unless the audit log entry is successfully committed in the same database transaction.
-- **Service Token Segregation:** Implemented Service Tokens (P0.6). These tokens are prefixed with `kekkai_svc_`, stored as hashes, and restricted via custom `blockServiceTokens` middleware so they cannot perform administrative actions or retrieve values outside their designated environment scope.
+- **Service Token Segregation:** Implemented Service Tokens (P0.6). These tokens are prefixed with `cloak-env_svc_`, stored as hashes, and restricted via custom `blockServiceTokens` middleware so they cannot perform administrative actions or retrieve values outside their designated environment scope.
 - **Refresh Token Replay Protection:** Implemented token families. If a used refresh token is presented to the API, it immediately revokes the **entire family** (all related tokens) under the assumption of session compromise.
 - **Brute Force Lockout:** Overhauled `auth.controller.ts` with exponential backoff logic (locks out for 15 minutes after 5 failed login attempts) and constant-time password hash checking to prevent user-enumeration timing attacks.
 
@@ -33,7 +33,7 @@ We completed the comprehensive security hardening protocol specified in `06 hard
 
 ## 2. Infrastructure & Operations (P2)
 
-- **OS-Level Keychain Storage (P0.8):** The CLI was rewritten to store long-lived credentials securely using the operating system's native keychain (via `keytar` + `libsecret` / Windows Credential Manager / macOS Keychain). It gracefully falls back to `~/.kekkai/credentials` with restricted file permissions (`icacls` on Windows, `chmod 600` on Unix) if native keychains are unavailable.
+- **OS-Level Keychain Storage (P0.8):** The CLI was rewritten to store long-lived credentials securely using the operating system's native keychain (via `keytar` + `libsecret` / Windows Credential Manager / macOS Keychain). It gracefully falls back to `~/.cloak-env/credentials` with restricted file permissions (`icacls` on Windows, `chmod 600` on Unix) if native keychains are unavailable.
 - **Docker Compose:** Added a `docker-compose.yml` defining the required Postgres (version 16) and Redis (version 7) services, complete with health checks.
 - **CI/CD Pipeline:** Built a robust GitHub Actions workflow (`.github/workflows/ci.yml`) featuring:
   - Strict **Gitleaks** secret scanning as the absolute first step.
@@ -71,4 +71,4 @@ We successfully implemented the security integration tests (`apps/api/src/__test
 - ✅ Verify AAD binding exceptions correctly block decryption if ciphertexts are swapped between rows, environments, or projects.
 - ✅ **Canary Test:** Confirms the string `CANARY_SECRET_VALUE_XQ7KM9P2Z8NRWF4L` is strictly omitted from stdout and stderr traces during operations.
 
-**All systems are go. KEKKAI is complete and ready for production deployment.**
+**All systems are go. CLOAK-ENV is complete and ready for production deployment.**

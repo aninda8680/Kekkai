@@ -1,15 +1,15 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: kekkai_db
+    container_name: cloak-env_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: kekkai
+      POSTGRES_DB: cloak-env
     ports:
       - "5432:5432"
     volumes:
-      - kekkai_db_data:/var/lib/postgresql/data
+      - cloak-env_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -18,11 +18,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: kekkai_redis
+    container_name: cloak-env_redis
     ports:
       - "6379:6379"
     volumes:
-      - kekkai_redis_data:/data
+      - cloak-env_redis_data:/data
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -31,5 +31,5 @@ services:
       retries: 5
 
 volumes:
-  kekkai_db_data:
-  kekkai_redis_data:
+  cloak-env_db_data:
+  cloak-env_redis_data:

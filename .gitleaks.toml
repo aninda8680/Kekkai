@@ -1,11 +1,11 @@
-# .gitleaks.toml — Secret scanning configuration for the KEKKAI repo itself.
+# .gitleaks.toml — Secret scanning configuration for the CLOAK-ENV repo itself.
 # Run: gitleaks detect --config .gitleaks.toml
 # CI: Add gitleaks as a step before any other checks.
 #
-# It is intentionally ironic but essential to scan KEKKAI's own codebase —
+# It is intentionally ironic but essential to scan CLOAK-ENV's own codebase —
 # a developer secret vault must not accidentally commit secrets to its own repo.
 
-title = "KEKKAI Secret Scanning"
+title = "CLOAK-ENV Secret Scanning"
 
 [allowlist]
   description = "Global allowlist"
@@ -27,10 +27,10 @@ title = "KEKKAI Secret Scanning"
   ]
 
 [[rules]]
-  id = "kekkai-master-kek"
-  description = "KEKKAI Master KEK — must never be committed"
+  id = "cloak-env-master-kek"
+  description = "CLOAK-ENV Master KEK — must never be committed"
   regex = '''MASTER_KEK\s*=\s*[0-9a-fA-F]{64}'''
-  tags = ["key", "kekkai", "critical"]
+  tags = ["key", "cloak-env", "critical"]
 
 [[rules]]
   id = "jwt-secret-env"

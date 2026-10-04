@@ -90,7 +90,7 @@ function SecretRow({ secret, environmentName, projectId, envId }: {
   projectId: string;
   envId: string;
 }) {
-  const cliCommand = `kekkai get ${secret.key} --env ${environmentName}`;
+  const cliCommand = `cloak-env get ${secret.key} --env ${environmentName}`;
 
   return (
     <tr className="group hover:bg-white/3 transition-colors" id={`secret-row-${secret.id}`}>
@@ -104,7 +104,7 @@ function SecretRow({ secret, environmentName, projectId, envId }: {
         <span
           className="font-mono text-gray-500 tracking-widest select-none masked-value"
           aria-label="Secret value hidden — use CLI to access"
-          title="Values only decrypt in your terminal. Use: kekkai get KEY"
+          title="Values only decrypt in your terminal. Use: cloak-env get KEY"
         >
           ••••••••••••••••••
         </span>
@@ -144,7 +144,7 @@ function SecretRow({ secret, environmentName, projectId, envId }: {
 
 /**
  * "Copy CLI command" — the ONLY action that gives access to a value.
- * Copies `kekkai get KEY --env ENV` to clipboard.
+ * Copies `cloak-env get KEY --env ENV` to clipboard.
  * Toast reinforces the security model positively.
  */
 function CopyCliButton({ command, secretKey }: { command: string; secretKey: string }) {
@@ -181,7 +181,7 @@ function EmptySecretsState({ environmentName }: { environmentName: string }) {
       </p>
       <p className="text-sm text-gray-500 mb-6">Push secrets from your local .env:</p>
       <code className="inline-block text-sm text-indigo-300 font-mono bg-black/60 border border-white/8 rounded px-4 py-2">
-        kekkai push --env {environmentName}
+        cloak-env push --env {environmentName}
       </code>
     </div>
   );

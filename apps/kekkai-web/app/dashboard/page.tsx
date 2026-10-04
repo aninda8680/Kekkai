@@ -59,7 +59,7 @@ export default async function DashboardPage() {
             Secret values never render in a browser — this is a core security guarantee. Use the CLI to read or manage individual values:
           </p>
           <code className="mt-2 block text-xs text-indigo-300 font-mono bg-black/50 border border-white/8 rounded px-3 py-2">
-            kekkai get JWT_SECRET --env production
+            cloak-env get JWT_SECRET --env production
           </code>
         </div>
       </div>
@@ -121,7 +121,7 @@ function NewProjectCard() {
         </svg>
       </div>
       <h3 className="text-sm font-medium mb-1 group-hover:text-indigo-300 transition-colors">New project</h3>
-      <p className="text-xs text-gray-500">Or via CLI: <code className="font-mono">kekkai init</code></p>
+      <p className="text-xs text-gray-500">Or via CLI: <code className="font-mono">cloak-env init</code></p>
     </Link>
   );
 }
@@ -139,7 +139,7 @@ function EmptyState() {
         Projects hold your environments and secrets. Create one from the CLI or here.
       </p>
       <code className="inline-block text-sm text-indigo-300 font-mono bg-black/50 border border-white/8 rounded px-4 py-2 mb-4">
-        kekkai init
+        cloak-env init
       </code>
     </div>
   );

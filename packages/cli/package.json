@@ -1,9 +1,9 @@
 {
-  "name": "@kekkai/cli",
+  "name": "cloak-env",
   "version": "1.0.0",
-  "description": "KEKKAI CLI — Secure developer secret vault",
+  "description": "CLOAK-ENV CLI — Secure developer secret vault",
   "bin": {
-    "kekkai": "./dist/index.js"
+    "cloak-env": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -15,7 +15,7 @@
     "dist"
   ],
   "dependencies": {
-    "@kekkai/shared": "*",
+    "cloak-env-shared": "*",
     "chalk": "^5.6.2",
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",

@@ -1,4 +1,4 @@
-# KEKKAI Incident Response — KEK Compromise Runbook
+# CLOAK-ENV Incident Response — KEK Compromise Runbook
 
 **Status:** Required before production launch (Phase 5 checklist item)  
 **Audience:** On-call engineer, platform owner  
@@ -76,7 +76,7 @@ UPDATE "RefreshToken" SET used = true WHERE used = false;
 
 Or use the admin API endpoint (if implemented):
 ```bash
-curl -X POST https://api.kekkai.io/api/admin/revoke-all-sessions \
+curl -X POST https://api.cloak-env.io/api/admin/revoke-all-sessions \
   -H "Authorization: Bearer <admin-token>"
 ```
 
@@ -99,7 +99,7 @@ curl -X POST https://api.kekkai.io/api/admin/revoke-all-sessions \
 ### Step 6 — Communications
 
 Once containment is complete:
-- Send a security advisory to affected users (email from trust@kekkai.io)
+- Send a security advisory to affected users (email from trust@cloak-env.io)
 - Include: what happened, when it was contained, what they should do (rotate their secrets)
 - Publish a public post-mortem within 72 hours if the incident affected production users
 
@@ -176,5 +176,5 @@ main().catch(console.error);
 |---|---|
 | Platform owner | [fill in] |
 | On-call rotation | [PagerDuty/Opsgenie link] |
-| Security advisory email | trust@kekkai.io |
+| Security advisory email | trust@cloak-env.io |
 | Hosting support (Render/Railway) | [support link] |

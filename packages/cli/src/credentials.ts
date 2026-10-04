@@ -3,21 +3,21 @@
  *
  * Priority:
  *  1. OS keychain (Windows Credential Manager / macOS Keychain / libsecret via `keytar`)
- *  2. File fallback (~/.kekkai/credentials) with best-effort permissions + prominent warning
+ *  2. File fallback (~/.cloak-env/credentials) with best-effort permissions + prominent warning
  *
- * Non-secret data (API URL, active projectId/envId) stays in ~/.kekkai/config.json always.
+ * Non-secret data (API URL, active projectId/envId) stays in ~/.cloak-env/config.json always.
  * The config.json file never contains tokens or refresh tokens.
  *
- * `kekkai doctor` reports which backend is active.
+ * `cloak-env doctor` reports which backend is active.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
 
-const CONFIG_DIR = path.join(os.homedir(), '.kekkai');
+const CONFIG_DIR = path.join(os.homedir(), '.cloak-env');
 const CRED_FILE = path.join(CONFIG_DIR, 'credentials');
-const SERVICE_NAME = 'kekkai-cli';
+const SERVICE_NAME = 'cloak-env-cli';
 const ACCOUNT_ACCESS = 'access_token';
 const ACCOUNT_REFRESH = 'refresh_token';
 
@@ -169,7 +169,7 @@ function warnFileStorage(): void {
     : 'Install keytar + libsecret for OS keyring: sudo apt install libsecret-1-dev && npm i -g keytar';
 
   process.stderr.write(
-    `\n⚠  KEKKAI: keytar not available — storing credentials in ${CRED_FILE}\n` +
+    `\n⚠  CLOAK-ENV: keytar not available — storing credentials in ${CRED_FILE}\n` +
     `   Best-effort file permissions applied, but OS keychain is more secure.\n` +
     `   ${hint}\n\n`
   );

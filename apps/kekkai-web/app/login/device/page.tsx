@@ -52,9 +52,9 @@ function DeviceLoginForm() {
             <div className="w-8 h-8 bg-cyan-400 rounded-md flex items-center justify-center">
               <span className="text-black font-bold text-sm">K</span>
             </div>
-            <span className="text-white font-semibold text-lg tracking-tight">KEKKAI</span>
+            <span className="text-white font-semibold text-lg tracking-tight">CLOAK-ENV</span>
           </div>
-          <h1 className="text-2xl font-semibold text-white tracking-tight">Connect KEKKAI CLI</h1>
+          <h1 className="text-2xl font-semibold text-white tracking-tight">Connect CLOAK-ENV CLI</h1>
           <p className="text-neutral-400 text-sm mt-2">
             Enter the code shown in your terminal to securely connect your device.
           </p>
@@ -103,7 +103,7 @@ function DeviceLoginForm() {
                   />
                   <p className="text-xs text-neutral-600 mt-1.5 text-center">
                     Copy this from your terminal where you ran{' '}
-                    <code className="font-mono text-neutral-500">kekkai auth login</code>
+                    <code className="font-mono text-neutral-500">cloak-env auth login</code>
                   </p>
                 </div>
 
@@ -119,7 +119,7 @@ function DeviceLoginForm() {
                   <input
                     id="password"
                     type="password"
-                    placeholder="Enter your KEKKAI password"
+                    placeholder="Enter your CLOAK-ENV password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-neutral-950 border border-neutral-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all placeholder:text-neutral-600"
@@ -165,7 +165,7 @@ function DeviceLoginForm() {
 
         {/* Security note */}
         <p className="text-center text-xs text-neutral-600 mt-5">
-          Never share your one-time code. KEKKAI will never ask for your token in an email.
+          Never share your one-time code. CLOAK-ENV will never ask for your token in an email.
         </p>
       </div>
     </div>

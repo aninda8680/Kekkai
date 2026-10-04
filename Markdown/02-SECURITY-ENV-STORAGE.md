@@ -1,4 +1,4 @@
-# KEKKAI — Security Model & Secure `.env` Storage
+# CLOAK-ENV — Security Model & Secure `.env` Storage
 
 This is the single most important document in the project. Every implementation decision should be
 checked against it before being merged.
@@ -65,7 +65,7 @@ Nothing in that row is useful without the unwrapped DEK, and the DEK is nowhere 
 
 ## 3. Zero-knowledge mode (v2, opt-in per project)
 
-For users who want the strongest guarantee — "even KEKKAI's own operators can't read my secrets" —
+For users who want the strongest guarantee — "even CLOAK-ENV's own operators can't read my secrets" —
 offer a project-level toggle:
 
 ```
@@ -110,7 +110,7 @@ Token type: "cli_device"    → GET /api/secrets/:id/reveal  →  200, ciphertex
 
 Concretely:
 - Issue two distinct token types at login: a **web session token** (short TTL, browser-only, tied
-  to a `token_type: "web"` claim) and a **CLI device token** (issued only via `kekkai login`'s
+  to a `token_type: "web"` claim) and a **CLI device token** (issued only via `cloak-env login`'s
   device flow, `token_type: "cli"`).
 - The `/secrets/:id/reveal` and `/sync/pull` endpoints check `token_type === "cli"` **before**
   checking anything else — a compromised web session simply cannot call the reveal path, full stop,
@@ -119,7 +119,7 @@ Concretely:
   version count, last accessed by whom) — never a value-bearing endpoint. There is no "Reveal"
   button in the dashboard at all, because there is no server route for the browser to call.
 - Dashboard shows `••••••••` permanently, with `Copy CLI command` instead of `Copy value` — e.g.
-  `kekkai get JWT_SECRET --env production`, which requires the user to run it in an authenticated
+  `cloak-env get JWT_SECRET --env production`, which requires the user to run it in an authenticated
   terminal session, and that access is itself audit-logged.
 
 This is meaningfully stronger than "hide the value until clicked," because it removes an entire
@@ -135,7 +135,7 @@ story: **"secrets never render in a browser, period."**
 - Refresh tokens: opaque random tokens (not JWTs), stored hashed in DB, rotated on every use
   (refresh-token rotation with reuse detection — if a rotated-out token is replayed, revoke the
   entire session family immediately, it's a strong signal of theft).
-- CLI device auth: a device-code flow (`kekkai login` opens a browser, user approves in the
+- CLI device auth: a device-code flow (`cloak-env login` opens a browser, user approves in the
   dashboard, CLI polls for the resulting device token) rather than the CLI ever handling the raw
   password — this is what GitHub CLI and Doppler both do, for good reason.
 
@@ -152,7 +152,7 @@ story: **"secrets never render in a browser, period."**
 [ ] Argon2id for passwords, AES-256-GCM for secrets, unique nonce per encryption
 [ ] Audit log is append-only (DB-level: no UPDATE/DELETE grants on audit_log table)
 [ ] Dependency & container image scanning in CI (npm audit / Snyk / Trivy)
-[ ] Automated secret-scanning on the KEKKAI repo itself (ironic but essential — e.g. gitleaks)
+[ ] Automated secret-scanning on the CLOAK-ENV repo itself (ironic but essential — e.g. gitleaks)
 [ ] Backups of the ciphertext DB are themselves encrypted; KEK backup procedure is documented
     and access-controlled separately from DB backup access
 [ ] Incident response doc: what happens if the KEK is suspected compromised (full re-encryption

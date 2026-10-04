@@ -1,5 +1,5 @@
 /**
- * KEKKAI API server — P2 updated.
+ * CLOAK-ENV API server — P2 updated.
  *
  * Boot order (order matters — do NOT rearrange):
  *  1. Install redacting logger (console scrubbing)
@@ -37,7 +37,7 @@ const EnvSchema = z.object({
 
 const envParsed = EnvSchema.safeParse(process.env);
 if (!envParsed.success) {
-  process.stderr.write('[KEKKAI BOOT] Invalid environment configuration:\n');
+  process.stderr.write('[CLOAK-ENV BOOT] Invalid environment configuration:\n');
   for (const issue of envParsed.error.issues) {
     process.stderr.write(`  - ${issue.path.join('.')}: ${issue.message}\n`);
   }
@@ -138,7 +138,7 @@ if (process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, () => {
     console.log(`
 ===================================================
-🚀 KEKKAI Development Environment is Ready!
+🚀 CLOAK-ENV Development Environment is Ready!
 ===================================================
 🌐 Frontend (Next.js) : http://localhost:3000
 ⚙️  Backend API        : http://localhost:${PORT}
@@ -150,11 +150,11 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 async function gracefulShutdown(signal: string) {
-  process.stdout.write(`\n[KEKKAI] ${signal} received — draining connections...\n`);
+  process.stdout.write(`\n[CLOAK-ENV] ${signal} received — draining connections...\n`);
   
   const closeDbAndExit = async () => {
     await prisma.$disconnect();
-    process.stdout.write('[KEKKAI] Gracefully shut down.\n');
+    process.stdout.write('[CLOAK-ENV] Gracefully shut down.\n');
     process.exit(0);
   };
 

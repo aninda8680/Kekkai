@@ -41,7 +41,7 @@ export const createServiceToken = async (req: AuthRequest, res: Response) => {
   }
 
   // Generate token — raw shown once, hash stored
-  const rawToken = `kekkai_svc_${crypto.randomBytes(32).toString('hex')}`;
+  const rawToken = `cloak-env_svc_${crypto.randomBytes(32).toString('hex')}`;
   const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
 

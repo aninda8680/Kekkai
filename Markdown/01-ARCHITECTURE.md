@@ -1,4 +1,4 @@
-# KEKKAI — Production Architecture & Data Flow
+# CLOAK-ENV — Production Architecture & Data Flow
 
 ## 1. System map
 
@@ -9,7 +9,7 @@
                     ┌───────────────────────────┼───────────────────────────┐
                     ▼                           ▼                           ▼
            ┌────────────────┐         ┌──────────────────┐        ┌────────────────┐
-           │  kekkai-web     │         │   kekkai CLI      │        │  Future: IDE /  │
+           │  cloak-env-web     │         │   cloak-env CLI      │        │  Future: IDE /  │
            │  (Next.js)      │         │  (Node.js/TS)      │        │  CI/CD plugins  │
            │  dashboard only │         │  push/pull/run     │        │                 │
            │  NO plaintext   │         │  full plaintext    │        │                 │
@@ -18,7 +18,7 @@
                     └───────────────┬────────────┴──────────────┬─────────────┘
                                      ▼                           ▼
                           ┌──────────────────────────────────────────┐
-                          │           kekkai-api (Express/TS)         │
+                          │           cloak-env-api (Express/TS)         │
                           │  ┌────────────┐ ┌────────────┐           │
                           │  │   Auth      │ │  RBAC /     │          │
                           │  │  (JWT+refr) │ │ Authorization│          │
@@ -44,10 +44,10 @@ plaintext simply does not exist** on the API. That's not a frontend hide-the-eye
 ## 2. Request-level trust boundaries
 
 ```
- Browser (kekkai-web)                CLI (kekkai)                    API (kekkai-api)
+ Browser (cloak-env-web)                CLI (cloak-env)                    API (cloak-env-api)
  ─────────────────────               ─────────────                  ─────────────────
  • Session cookie (httpOnly,         • Device-bound refresh          • Verifies JWT signature
-   Secure, SameSite=Strict)            token in ~/.kekkai/config      + expiry on every request
+   Secure, SameSite=Strict)            token in ~/.cloak-env/config      + expiry on every request
  • Short-lived access JWT              (0600 perms, never in repo)  • Re-derives project/env
    in memory only, never in           • Short-lived access token       membership from DB —
    localStorage                        refreshed transparently         NEVER trusts client-sent
@@ -59,12 +59,12 @@ plaintext simply does not exist** on the API. That's not a frontend hide-the-eye
 ## 3. End-to-end secret lifecycle (push → store → pull/run)
 
 ```
- Dev machine                     KEKKAI API                      PostgreSQL / KMS
+ Dev machine                     CLOAK-ENV API                      PostgreSQL / KMS
  ───────────                     ──────────                      ────────────────
  .env (plaintext,
  local only)
      │
-     │ kekkai push
+     │ cloak-env push
      ▼
  Read + parse .env
  Validate keys (regex,
@@ -94,7 +94,7 @@ plaintext simply does not exist** on the API. That's not a frontend hide-the-eye
                                               PostgreSQL row
                                               (ciphertext only)
 
- kekkai pull / kekkai run
+ cloak-env pull / cloak-env run
      │  HTTPS request for
      │  environment secrets
      ▼
@@ -134,14 +134,14 @@ User
 
 ```
                     ┌─────────────┐
-   Users ─────────► │  Vercel      │  kekkai-web (Next.js, edge-cached static,
+   Users ─────────► │  Vercel      │  cloak-env-web (Next.js, edge-cached static,
                     │  (frontend)  │  API calls proxied to backend over HTTPS)
                     └──────┬───────┘
                            │ HTTPS
                     ┌──────▼───────┐        ┌───────────────┐
    CLI ───────────► │  Render/      │◄──────►│ KMS (cloud KMS │
                     │  Railway      │        │ or self-hosted │
-                    │  (kekkai-api) │        │ Vault Transit) │
+                    │  (cloak-env-api) │        │ Vault Transit) │
                     └──────┬───────┘        └───────────────┘
                            │ TLS, connection pooling (pgbouncer)
                     ┌──────▼───────┐

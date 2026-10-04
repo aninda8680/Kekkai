@@ -4,11 +4,11 @@
  * Three token types, all validated server-side:
  *   'web'     — issued by web login, expires 15min, no value endpoints
  *   'cli'     — issued by device-code flow, expires 15min (refresh 30d)
- *   'service' — issued by `kekkai token create`, scoped to one env, read-only
+ *   'service' — issued by `cloak-env token create`, scoped to one env, read-only
  *
  * tokenType NEVER accepted from client input — always derived from:
  *   - JWT claim for web/cli tokens
- *   - ServiceToken DB lookup for service tokens (identified by kekkai_svc_ prefix)
+ *   - ServiceToken DB lookup for service tokens (identified by cloak-env_svc_ prefix)
  */
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
@@ -41,8 +41,8 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
   const token = header.slice(7);
 
-  // P0.6: Check if this is a service token (kekkai_svc_ prefix)
-  if (token.startsWith('kekkai_svc_')) {
+  // P0.6: Check if this is a service token (cloak-env_svc_ prefix)
+  if (token.startsWith('cloak-env_svc_')) {
     return handleServiceToken(token, req, res, next);
   }
 
@@ -107,7 +107,7 @@ export const requireCliToken = (req: AuthRequest, res: Response, next: NextFunct
   const tokenType = req.user?.tokenType;
   if (tokenType === 'cli' || tokenType === 'service') return next();
   return res.status(403).json({
-    error: 'This endpoint requires a CLI token. Use `kekkai login` to authenticate.',
+    error: 'This endpoint requires a CLI token. Use `cloak-env login` to authenticate.',
   });
 };
 

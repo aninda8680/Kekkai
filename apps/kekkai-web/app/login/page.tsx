@@ -33,7 +33,7 @@ export default function LoginPage() {
               <span className="font-bold text-xl text-white">K</span>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome to KEKKAI</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome to CLOAK-ENV</h1>
           <p className="text-gray-400">Log in to access your dashboard.</p>
         </div>
 

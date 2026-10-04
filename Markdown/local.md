@@ -1,6 +1,6 @@
 # Local Development Setup Guide
 
-This guide outlines the steps to run the KEKKAI project on your local machine for development purposes.
+This guide outlines the steps to run the CLOAK-ENV project on your local machine for development purposes.
 
 ## 1. Prerequisites
 
@@ -12,9 +12,9 @@ Make sure you have the following installed on your machine:
 
 ## 2. Start the Local Database
 
-KEKKAI uses PostgreSQL. For local development, this runs inside a Docker container.
+CLOAK-ENV uses PostgreSQL. For local development, this runs inside a Docker container.
 
-1. Open your terminal in the root directory (`kekkai-monorepo`).
+1. Open your terminal in the root directory (`cloak-env-monorepo`).
 2. Start the database in the background by running:
    ```bash
    docker compose up -d
@@ -24,7 +24,7 @@ KEKKAI uses PostgreSQL. For local development, this runs inside a Docker contain
 
 ## 3. Configure Environment Variables
 
-The KEKKAI backend API requires some secrets to start up securely.
+The CLOAK-ENV backend API requires some secrets to start up securely.
 
 1. Navigate to the backend folder (e.g., `apps/api`).
 2. Create a file named `.env`.
@@ -32,7 +32,7 @@ The KEKKAI backend API requires some secrets to start up securely.
 
 ```env
 # Database connection (Must match docker-compose.yml)
-DATABASE_URL="postgresql://kekkai:kekkai_dev_password@localhost:5432/kekkai"
+DATABASE_URL="postgresql://cloak-env:cloak-env_dev_password@localhost:5432/cloak-env"
 
 # Authentication & Encryption Keys (Generate random strings for these locally)
 JWT_SECRET="local_development_jwt_secret"

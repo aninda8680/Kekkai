@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * KEKKAI CLI — complete implementation
+ * CLOAK-ENV CLI — complete implementation
  *
  * Security design:
  *  - Login uses device-code flow — the CLI process NEVER handles a raw password
- *  - Config stored at ~/.kekkai/config.json (chmod 0600)
+ *  - Config stored at ~/.cloak-env/config.json (chmod 0600)
  *  - All destructive operations require confirmation unless --yes
  *  - .gitignore checked before writing .env
  *  - Every secret access is audit-logged server-side
@@ -24,24 +24,24 @@ import { execSync, spawn } from 'node:child_process';
 // ─── Configuration ─────────────────────────────────────────────────────────
 
 let globalConfigCache: GlobalConfig | null = null;
-const CONFIG_DIR = path.join(os.homedir(), '.kekkai');
+const CONFIG_DIR = path.join(os.homedir(), '.cloak-env');
 const GLOBAL_CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
-const LOCAL_CONFIG_FILE = '.kekkai/config.json';
+const LOCAL_CONFIG_FILE = '.cloak-env/config.json';
 
 /**
- * Single source of truth for the KEKKAI host.
+ * Single source of truth for the CLOAK-ENV host.
  * Priority order:
- *  1. KEKKAI_HOST env var (overrides everything)
- *  2. KEKKAI_API_URL env var (legacy, deprecated)
- *  3. config.host (saved after kekkai auth login)
+ *  1. GHOST_ENV_HOST env var (overrides everything)
+ *  2. GHOST_ENV_API_URL env var (legacy, deprecated)
+ *  3. config.host (saved after cloak-env auth login)
  *  4. config.apiUrl (legacy, migrated on first read)
  *  5. Default production host
  */
-const DEFAULT_HOST = 'https://kekkai.onrender.com';
+const DEFAULT_HOST = 'https://cloak-env.onrender.com';
 
 function getHost(): string {
-  if (process.env.KEKKAI_HOST) return process.env.KEKKAI_HOST.trim();
-  if (process.env.KEKKAI_API_URL) return process.env.KEKKAI_API_URL.trim();  // legacy compat
+  if (process.env.GHOST_ENV_HOST) return process.env.GHOST_ENV_HOST.trim();
+  if (process.env.GHOST_ENV_API_URL) return process.env.GHOST_ENV_API_URL.trim();  // legacy compat
   const config = loadGlobalConfig();
   if (config.host) return config.host.trim();
   if (config.apiUrl) return config.apiUrl.trim();  // migrate legacy apiUrl transparently
@@ -54,7 +54,7 @@ function getApiUrl(): string {
 }
 
 interface GlobalConfig {
-  host?: string;           // canonical KEKKAI host (replaces apiUrl)
+  host?: string;           // canonical CLOAK-ENV host (replaces apiUrl)
   apiUrl?: string;         // DEPRECATED — kept for backward compat, migrated on read
   user?: {
     id: string;
@@ -109,10 +109,10 @@ function saveLocalConfig(config: LocalConfig): void {
 }
 
 function requireToken(): string {
-  if (process.env.KEKKAI_TOKEN) return process.env.KEKKAI_TOKEN;
+  if (process.env.GHOST_ENV_TOKEN) return process.env.GHOST_ENV_TOKEN;
   const config = loadGlobalConfig();
   if (!config.accessToken) {
-    console.error(chalk.red('✗ Not logged in. Run: kekkai auth login'));
+    console.error(chalk.red('✗ Not logged in. Run: cloak-env auth login'));
     process.exit(1);
   }
   return config.accessToken;
@@ -121,7 +121,7 @@ function requireToken(): string {
 function requireLocalConfig(): LocalConfig {
   const config = loadLocalConfig();
   if (!config) {
-    console.error(chalk.red('✗ No project linked. Run: kekkai init'));
+    console.error(chalk.red('✗ No project linked. Run: cloak-env init'));
     process.exit(1);
   }
   return config;
@@ -130,8 +130,8 @@ function requireLocalConfig(): LocalConfig {
 function getOptionalLocalConfig(): LocalConfig | null {
   const config = loadLocalConfig();
   if (!config) {
-    if (process.env.KEKKAI_TOKEN) return null; // allow fallback for service tokens
-    console.error(chalk.red('✗ No project linked. Run: kekkai init'));
+    if (process.env.GHOST_ENV_TOKEN) return null; // allow fallback for service tokens
+    console.error(chalk.red('✗ No project linked. Run: cloak-env init'));
     process.exit(1);
   }
   return config;
@@ -152,7 +152,7 @@ async function apiFetch(
   let res = await fetch(`${getApiUrl()}${endpoint}`, { ...options, headers });
 
   // Auto-refresh on 401 (once), unless using a static service token override
-  if (res.status === 401 && token && !process.env.KEKKAI_TOKEN) {
+  if (res.status === 401 && token && !process.env.GHOST_ENV_TOKEN) {
     const config = loadGlobalConfig();
     if (config.refreshToken) {
       // Use the new /oauth/token/refresh endpoint; fall back to legacy /api/auth/refresh
@@ -243,8 +243,8 @@ async function confirm(message: string, defaultNo = true): Promise<boolean> {
 const program = new Command();
 
 program
-  .name('kekkai')
-  .description(chalk.bold('KEKKAI') + ' — Secure developer secret vault')
+  .name('cloak-env')
+  .description(chalk.bold('CLOAK-ENV') + ' — Secure developer secret vault')
   .version('1.0.0');
 
 // ─── AUTH COMMAND GROUP ────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ async function runAuthLogin(opts: {
   if (opts.local) sessionHost = 'http://localhost:4000';
 
   if (sessionHost) {
-    process.env.KEKKAI_HOST = sessionHost;
+    process.env.GHOST_ENV_HOST = sessionHost;
   }
 
   const apiUrl = getApiUrl();
@@ -292,7 +292,7 @@ async function runAuthLogin(opts: {
     }
     initData = await res.json();
   } catch {
-    spinner.fail('Cannot reach KEKKAI server. Check your connection or run with --local.');
+    spinner.fail('Cannot reach CLOAK-ENV server. Check your connection or run with --local.');
     process.exit(1);
   }
 
@@ -305,11 +305,11 @@ async function runAuthLogin(opts: {
   const serverInterval = initData.interval || 5;
   // The server knows the correct frontend URL — always use it for the browser
   const browserUrl     = initData.verification_uri || initData.verificationUrl
-    || (opts.local ? 'http://localhost:3000/login/device' : 'https://kekkai-env.vercel.app/login/device');
+    || (opts.local ? 'http://localhost:3000/login/device' : 'https://cloak-env-env.vercel.app/login/device');
 
   // ── Step 2: Display GitHub-style prompt ──
   console.log('');
-  console.log(chalk.bold('KEKKAI Authentication'));
+  console.log(chalk.bold('CLOAK-ENV Authentication'));
   console.log('');
   console.log('First, copy your one-time code:');
   console.log('');
@@ -368,7 +368,7 @@ async function runAuthLogin(opts: {
     if (pollData.status === 'expired') {
       pollSpinner.fail('Authentication request expired.');
       console.log('');
-      console.log(chalk.gray(`Run ${chalk.bold('kekkai auth login')} to try again.`));
+      console.log(chalk.gray(`Run ${chalk.bold('cloak-env auth login')} to try again.`));
       process.exit(1);
     }
 
@@ -418,17 +418,17 @@ async function runAuthLogin(opts: {
   }
 
   pollSpinner.fail('Authentication request expired.');
-  console.log(chalk.gray(`Run ${chalk.bold('kekkai auth login')} to try again.`));
+  console.log(chalk.gray(`Run ${chalk.bold('cloak-env auth login')} to try again.`));
   process.exit(1);
 }
 
 authCmd
   .command('login')
-  .description('Authenticate with KEKKAI (device-code flow — no password in CLI)')
+  .description('Authenticate with CLOAK-ENV (device-code flow — no password in CLI)')
   .option('--no-browser', 'Print the URL instead of opening a browser')
   .option('--local',      'Use local development server (http://localhost:4000)')
   .option('--api <url>',  'Use a custom API URL (deprecated: use --host)')
-  .option('--host <url>', 'Use a custom KEKKAI host URL')
+  .option('--host <url>', 'Use a custom CLOAK-ENV host URL')
   .action(async (opts) => runAuthLogin(opts));
 
 // ─── auth status ───────────────────────────────────────────────────────────
@@ -440,7 +440,7 @@ authCmd
     const config = loadGlobalConfig();
 
     console.log('');
-    console.log(chalk.bold('KEKKAI Authentication'));
+    console.log(chalk.bold('CLOAK-ENV Authentication'));
     console.log('');
 
     if (!config.accessToken) {
@@ -448,7 +448,7 @@ authCmd
       console.log('');
       console.log('Run:');
       console.log('');
-      console.log(`  ${chalk.bold('kekkai auth login')}`);
+      console.log(`  ${chalk.bold('cloak-env auth login')}`);
       console.log('');
       return;
     }
@@ -486,7 +486,7 @@ authCmd
 
 async function runAuthLogout() {
   const config = loadGlobalConfig();
-  const token  = config.accessToken || process.env.KEKKAI_TOKEN;
+  const token  = config.accessToken || process.env.GHOST_ENV_TOKEN;
 
   // 1. Attempt server-side revocation (gracefully ignore network errors)
   if (token && config.refreshToken) {
@@ -525,7 +525,7 @@ authCmd
     const cliDevices: any[] = data.cliDevices || [];
 
     console.log('');
-    console.log(chalk.bold('KEKKAI CLI Devices'));
+    console.log(chalk.bold('CLOAK-ENV CLI Devices'));
     console.log('');
 
     if (cliDevices.length === 0) {
@@ -544,7 +544,7 @@ authCmd
       console.log('');
     });
 
-    console.log(chalk.gray('To revoke a device: kekkai auth revoke <device-id>'));
+    console.log(chalk.gray('To revoke a device: cloak-env auth revoke <device-id>'));
     console.log('');
   });
 
@@ -563,37 +563,37 @@ authCmd
 
 program
   .command('login', { hidden: true })
-  .description('[Deprecated] Use: kekkai auth login')
+  .description('[Deprecated] Use: cloak-env auth login')
   .option('--local',       'Use local development server')
   .option('--api <url>',   'Use a custom API URL')
-  .option('--host <url>',  'Use a custom KEKKAI host URL')
+  .option('--host <url>',  'Use a custom CLOAK-ENV host URL')
   .option('--no-browser',  'Print the URL instead of opening a browser')
   .action(async (opts) => {
-    process.stderr.write(chalk.yellow('\n⚠  kekkai login is deprecated. Use: kekkai auth login\n\n'));
+    process.stderr.write(chalk.yellow('\n⚠  cloak-env login is deprecated. Use: cloak-env auth login\n\n'));
     await runAuthLogin(opts);
   });
 
 program
   .command('logout', { hidden: true })
-  .description('[Deprecated] Use: kekkai auth logout')
+  .description('[Deprecated] Use: cloak-env auth logout')
   .action(async () => {
-    process.stderr.write(chalk.yellow('\n⚠  kekkai logout is deprecated. Use: kekkai auth logout\n\n'));
+    process.stderr.write(chalk.yellow('\n⚠  cloak-env logout is deprecated. Use: cloak-env auth logout\n\n'));
     await runAuthLogout();
   });
 
 program
   .command('whoami', { hidden: true })
-  .description('[Deprecated] Use: kekkai auth status')
+  .description('[Deprecated] Use: cloak-env auth status')
   .action(async () => {
-    process.stderr.write(chalk.yellow('\n⚠  kekkai whoami is deprecated. Use: kekkai auth status\n\n'));
+    process.stderr.write(chalk.yellow('\n⚠  cloak-env whoami is deprecated. Use: cloak-env auth status\n\n'));
     const config = loadGlobalConfig();
     if (!config.accessToken) {
-      console.error(chalk.red('✗ Not authenticated. Run: kekkai auth login'));
+      console.error(chalk.red('✗ Not authenticated. Run: cloak-env auth login'));
       process.exit(1);
     }
     const token = requireToken();
     const res = await apiFetch('/api/auth/me', {}, token);
-    if (!res.ok) { console.error(chalk.red('✗ Session invalid. Run: kekkai auth login')); process.exit(1); }
+    if (!res.ok) { console.error(chalk.red('✗ Session invalid. Run: cloak-env auth login')); process.exit(1); }
     const { email, id } = await res.json();
     console.log(chalk.bold('User:   ') + email);
     console.log(chalk.bold('ID:     ') + id);
@@ -606,7 +606,7 @@ program
 
 program
   .command('init')
-  .description('Link this directory to a KEKKAI project and environment')
+  .description('Link this directory to a CLOAK-ENV project and environment')
   .option('--force', 'Relink even if already configured')
   .action(async (opts) => {
     const existing = loadLocalConfig();
@@ -624,7 +624,7 @@ program
     const projects = await res.json();
 
     if (projects.length === 0) {
-      console.log(chalk.yellow('No projects yet. Create one with: kekkai project create'));
+      console.log(chalk.yellow('No projects yet. Create one with: cloak-env project create'));
       return;
     }
 
@@ -652,17 +652,17 @@ program
 
     // Gitignore checks
     warnGitignore('.env');
-    warnGitignore('.kekkai');
+    warnGitignore('.cloak-env');
 
     console.log(chalk.green(`\n✓ Linked to ${chalk.bold(project.name)} / ${chalk.bold(env.name)}`));
-    console.log(chalk.gray('  Config saved to .kekkai/config.json'));
+    console.log(chalk.gray('  Config saved to .cloak-env/config.json'));
   });
 
 // ─── PUSH ─────────────────────────────────────────────────────────────────
 
 program
   .command('push')
-  .description('Upload local .env to KEKKAI vault (with diff preview)')
+  .description('Upload local .env to CLOAK-ENV vault (with diff preview)')
   .option('--env <file>', '.env file to push', '.env')
   .option('--yes', 'Skip confirmation prompt')
   .action(async (opts) => {
@@ -670,7 +670,7 @@ program
     const local = requireLocalConfig();
 
     warnGitignore('.env');
-    warnGitignore('.kekkai');
+    warnGitignore('.cloak-env');
 
     if (!fs.existsSync(opts.env)) {
       console.error(chalk.red(`✗ File not found: ${opts.env}`));
@@ -851,7 +851,7 @@ program
   .action(async () => {
     const local = loadLocalConfig();
     if (!local) {
-      console.log(chalk.red('✗ Not linked. Run: kekkai init'));
+      console.log(chalk.red('✗ Not linked. Run: cloak-env init'));
       return;
     }
 
@@ -859,10 +859,10 @@ program
 
     console.log(chalk.bold('\nProject:     ') + local.projectName);
     console.log(chalk.bold('Environment: ') + local.environmentName);
-    console.log(chalk.bold('Linked:      ') + chalk.green('✓') + chalk.gray(' (.kekkai/config.json)'));
+    console.log(chalk.bold('Linked:      ') + chalk.green('✓') + chalk.gray(' (.cloak-env/config.json)'));
 
     if (!fs.existsSync('.env')) {
-      console.log(chalk.yellow('\nNo local .env file found. Run: kekkai pull'));
+      console.log(chalk.yellow('\nNo local .env file found. Run: cloak-env pull'));
       return;
     }
 
@@ -889,7 +889,7 @@ program
     if (!changed && !added && !removed) console.log(`  ${chalk.green('=')} In sync`);
 
     if (changed || added || removed) {
-      console.log(chalk.gray('\n  Run `kekkai diff` for details, or `kekkai push` / `kekkai pull` to reconcile.'));
+      console.log(chalk.gray('\n  Run `cloak-env diff` for details, or `cloak-env push` / `cloak-env pull` to reconcile.'));
     }
   });
 
@@ -1031,7 +1031,7 @@ program
     );
     const secrets: any[] = await res.json();
 
-    if (secrets.length === 0) { console.log(chalk.gray('No secrets. Run: kekkai push')); return; }
+    if (secrets.length === 0) { console.log(chalk.gray('No secrets. Run: cloak-env push')); return; }
 
     const table = new Table({ head: [chalk.bold('KEY'), chalk.bold('VERSION'), chalk.bold('UPDATED')] });
     for (const s of secrets) {
@@ -1039,7 +1039,7 @@ program
     }
     console.log(chalk.bold(`\n${local.projectName} / ${local.environmentName} (${secrets.length} secrets)\n`));
     console.log(table.toString());
-    console.log(chalk.gray('\nValues are not shown here. Use: kekkai get KEY'));
+    console.log(chalk.gray('\nValues are not shown here. Use: cloak-env get KEY'));
   });
 
 // ─── HISTORY ──────────────────────────────────────────────────────────────
@@ -1070,7 +1070,7 @@ program
       table.push([`v${v.version}`, new Date(v.createdAt).toLocaleString()]);
     }
     console.log(table.toString());
-    console.log(chalk.gray('\nTo roll back: kekkai rollback ' + key + ' --version N'));
+    console.log(chalk.gray('\nTo roll back: cloak-env rollback ' + key + ' --version N'));
   });
 
 // ─── ROLLBACK ─────────────────────────────────────────────────────────────
@@ -1238,9 +1238,9 @@ program
 
 program
   .command('doctor')
-  .description('Sanity-check the local KEKKAI setup and print actionable fixes')
+  .description('Sanity-check the local CLOAK-ENV setup and print actionable fixes')
   .action(async () => {
-    console.log(chalk.bold('\nkekkai doctor\n'));
+    console.log(chalk.bold('\ncloak-env doctor\n'));
     let issues = 0;
 
     // 1. gitignore checks
@@ -1250,17 +1250,17 @@ program
       issues++;
     } else console.log(chalk.green('✓ .env is in .gitignore'));
 
-    if (!isInGitignore('.kekkai')) {
-      console.log(chalk.red('✗ .kekkai/ is not in .gitignore'));
-      console.log(chalk.gray('  Fix: echo ".kekkai" >> .gitignore\n'));
+    if (!isInGitignore('.cloak-env')) {
+      console.log(chalk.red('✗ .cloak-env/ is not in .gitignore'));
+      console.log(chalk.gray('  Fix: echo ".cloak-env" >> .gitignore\n'));
       issues++;
-    } else console.log(chalk.green('✓ .kekkai is in .gitignore'));
+    } else console.log(chalk.green('✓ .cloak-env is in .gitignore'));
 
     // 2. Local config
     const local = loadLocalConfig();
     if (!local) {
       console.log(chalk.red('✗ No project linked'));
-      console.log(chalk.gray('  Fix: kekkai init\n'));
+      console.log(chalk.gray('  Fix: cloak-env init\n'));
       issues++;
     } else {
       console.log(chalk.green(`✓ Linked to ${local.projectName} / ${local.environmentName}`));
@@ -1270,7 +1270,7 @@ program
     const config = loadGlobalConfig();
     if (!config.accessToken) {
       console.log(chalk.red('✗ Not logged in'));
-      console.log(chalk.gray('  Fix: kekkai login\n'));
+      console.log(chalk.gray('  Fix: cloak-env login\n'));
       issues++;
     } else {
       console.log(chalk.green('✓ CLI token present'));
@@ -1283,7 +1283,7 @@ program
       else { console.log(chalk.red(`✗ API returned ${res.status}`)); issues++; }
     } catch {
       console.log(chalk.red(`✗ Cannot reach API at ${getApiUrl()}`));
-      console.log(chalk.gray('  Check your internet connection or KEKKAI_API_URL env var\n'));
+      console.log(chalk.gray('  Check your internet connection or GHOST_ENV_API_URL env var\n'));
       issues++;
     }
 
@@ -1301,7 +1301,7 @@ program
           ).length;
           if (changedCount > 0) {
             console.log(chalk.yellow(`⚠ ${changedCount} key(s) differ between local .env and vault`));
-            console.log(chalk.gray('  Run: kekkai diff\n'));
+            console.log(chalk.gray('  Run: cloak-env diff\n'));
             issues++;
           } else {
             console.log(chalk.green('✓ Local .env matches vault (no drift)'));
@@ -1319,7 +1319,7 @@ program
 
 program
   .command('scan')
-  .description('Scan the working directory for likely-secret values not tracked in KEKKAI')
+  .description('Scan the working directory for likely-secret values not tracked in CLOAK-ENV')
   .action(async () => {
     const SECRET_PATTERNS = [
       { pattern: /(?:AKIA|ASIA)[0-9A-Z]{16}/g, label: 'AWS Access Key' },
@@ -1357,7 +1357,7 @@ program
     if (found === 0) console.log(chalk.green('✓ No obvious un-vaulted secrets found.'));
     else {
       console.log('');
-      console.log(chalk.yellow(`${found} potential secret(s) found. Consider: kekkai push`));
+      console.log(chalk.yellow(`${found} potential secret(s) found. Consider: cloak-env push`));
     }
   });
 

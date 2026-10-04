@@ -1,4 +1,4 @@
-# KEKKAI Prisma & Database Migration Guide
+# CLOAK-ENV Prisma & Database Migration Guide
 
 > **Quick Summary for Developers:**  
 > **No, changing `schema.prisma` does NOT delete your existing data.**  
@@ -8,7 +8,7 @@
 
 ## 1. How Prisma Manages Your Database
 
-Prisma is the Object-Relational Mapper (ORM) used by KEKKAI to interact with PostgreSQL (hosted on **Neon**).
+Prisma is the Object-Relational Mapper (ORM) used by CLOAK-ENV to interact with PostgreSQL (hosted on **Neon**).
 
 Your database state is managed through two key elements:
 1. **`prisma/schema.prisma`**: The single source of truth describing your database models, columns, relations, and types in TypeScript-like syntax.
@@ -165,7 +165,7 @@ Both tools view and edit the **exact same live data**. You can use whichever you
 
 ## 8. Neon Safety Nets (Cloud Backups & Branching)
 
-Because KEKKAI uses **Neon Serverless Postgres**, you have built-in safeguards:
+Because CLOAK-ENV uses **Neon Serverless Postgres**, you have built-in safeguards:
 
 1. **Instant Point-in-Time Recovery (PITR):**
    Neon continuously saves the WAL (Write-Ahead Log). If an accidental change ever occurs, you can restore your database to any second in the past via the Neon Console.

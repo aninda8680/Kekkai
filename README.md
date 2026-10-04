@@ -1,4 +1,4 @@
-# 🛡️ KEKKAI (結界)
+# 🛡️ CLOAK-ENV (結界)
 
 > **Zero-Trust Developer Secret Vault & Environment Synchronization Engine**  
 > Plaintext secrets live exclusively in developer memory and local files. Envelope-encrypted with AES-256-GCM + Master KEK at rest and in transit.
@@ -7,12 +7,12 @@
 
 ## ⚡ CLI Authentication (GitHub-Style Device Flow)
 
-KEKKAI CLI uses a seamless, browser-based **OAuth 2.0 Device Authorization Grant (RFC 8628)** flow inspired by the GitHub CLI (`gh auth`). No passwords or plaintext credentials ever touch your terminal process.
+CLOAK-ENV CLI uses a seamless, browser-based **OAuth 2.0 Device Authorization Grant (RFC 8628)** flow inspired by the GitHub CLI (`gh auth`). No passwords or plaintext credentials ever touch your terminal process.
 
 ```
        Terminal                                     Browser
  ┌──────────────────┐                         ┌──────────────────┐
- │ kekkai auth login│                         │ /login/device    │
+ │ cloak-env auth login│                         │ /login/device    │
  └────────┬─────────┘                         └────────┬─────────┘
           │                                            │
           │ 1. Request user code & verification URL    │
@@ -33,30 +33,30 @@ KEKKAI CLI uses a seamless, browser-based **OAuth 2.0 Device Authorization Grant
 
 ---
 
-### New `kekkai auth` Command Suite
+### New `cloak-env auth` Command Suite
 
 | Command | Options / Flags | Description |
 |---|---|---|
-| `kekkai auth login` | `[--no-browser]` `[--local]` `[--host <url>]` | Authenticate with KEKKAI via browser device-code grant |
-| `kekkai auth login --no-browser` | — | Headless / SSH mode: prints verification URL & code without opening browser |
-| `kekkai auth login --local` | — | Connects to local development API (`http://localhost:4000`) |
-| `kekkai auth login --host <url>` | `--host <url>` | Connects to a custom self-hosted KEKKAI instance |
-| `kekkai auth status` | — | Displays active session host, account email, status, and token expiry |
-| `kekkai auth logout` | — | Revokes refresh token server-side and clears local stored credentials |
-| `kekkai auth devices` | — | Lists all registered CLI devices associated with your account |
-| `kekkai auth revoke <id>` | `<id>` | Revokes access for a specific registered CLI device by ID |
+| `cloak-env auth login` | `[--no-browser]` `[--local]` `[--host <url>]` | Authenticate with CLOAK-ENV via browser device-code grant |
+| `cloak-env auth login --no-browser` | — | Headless / SSH mode: prints verification URL & code without opening browser |
+| `cloak-env auth login --local` | — | Connects to local development API (`http://localhost:4000`) |
+| `cloak-env auth login --host <url>` | `--host <url>` | Connects to a custom self-hosted CLOAK-ENV instance |
+| `cloak-env auth status` | — | Displays active session host, account email, status, and token expiry |
+| `cloak-env auth logout` | — | Revokes refresh token server-side and clears local stored credentials |
+| `cloak-env auth devices` | — | Lists all registered CLI devices associated with your account |
+| `cloak-env auth revoke <id>` | `<id>` | Revokes access for a specific registered CLI device by ID |
 
 ---
 
 ### Backward Compatibility & Deprecation Matrix
 
-All legacy commands continue to function with a deprecation warning, automatically routing to their modern `kekkai auth` equivalents:
+All legacy commands continue to function with a deprecation warning, automatically routing to their modern `cloak-env auth` equivalents:
 
 | Legacy Command (Deprecated) | Modern Command | Status | Behavior |
 |---|---|---|---|
-| `kekkai login` | `kekkai auth login` | ⚠ Deprecated | Emits `⚠ kekkai login is deprecated. Use: kekkai auth login` and launches device login |
-| `kekkai logout` | `kekkai auth logout` | ⚠ Deprecated | Emits `⚠ kekkai logout is deprecated. Use: kekkai auth logout` and revokes session |
-| `kekkai whoami` | `kekkai auth status` | ⚠ Deprecated | Emits `⚠ kekkai whoami is deprecated. Use: kekkai auth status` and prints account status |
+| `cloak-env login` | `cloak-env auth login` | ⚠ Deprecated | Emits `⚠ cloak-env login is deprecated. Use: cloak-env auth login` and launches device login |
+| `cloak-env logout` | `cloak-env auth logout` | ⚠ Deprecated | Emits `⚠ cloak-env logout is deprecated. Use: cloak-env auth logout` and revokes session |
+| `cloak-env whoami` | `cloak-env auth status` | ⚠ Deprecated | Emits `⚠ cloak-env whoami is deprecated. Use: cloak-env auth status` and prints account status |
 
 ---
 
@@ -65,29 +65,29 @@ All legacy commands continue to function with a deprecation warning, automatical
 #### 1. Standard Interactive Login
 Automatically opens your browser to the verification page and awaits approval:
 ```bash
-$ kekkai auth login
+$ cloak-env auth login
 
-KEKKAI Authentication
+CLOAK-ENV Authentication
 
 First, copy your one-time code:
 
    RWMX-NZ5A
 
 Opening:
-  https://app.kekkai.io/login/device
+  https://cloak-env.vercel.app/login/device
 
 ⠇ Waiting for authentication...
 ✔ Authentication successful.
 
-Logged in as dev@kekkai.io
+Logged in as dev@cloak-env.io
 ```
 
 #### 2. Headless / SSH / Remote Container Mode (`--no-browser`)
 Ideal for headless servers, Docker containers, or remote SSH sessions where no GUI browser is present:
 ```bash
-$ kekkai auth login --no-browser
+$ cloak-env auth login --no-browser
 
-KEKKAI Authentication
+CLOAK-ENV Authentication
 
 First, copy your one-time code:
 
@@ -95,24 +95,24 @@ First, copy your one-time code:
 
 Open this URL in your browser:
 
-  https://app.kekkai.io/login/device
+  https://cloak-env.vercel.app/login/device
 
 Enter the code above when prompted.
 
 ⠇ Waiting for authentication...
 ✔ Authentication successful.
 
-Logged in as dev@kekkai.io
+Logged in as dev@cloak-env.io
 ```
 
 #### 3. Local Development (`--local`)
 Targets the local development API (`http://localhost:4000`) and local frontend verification page (`http://localhost:3000/login/device`):
 ```bash
-$ kekkai auth login --local
+$ cloak-env auth login --local
 
 Connecting to http://localhost:4000...
 
-KEKKAI Authentication
+CLOAK-ENV Authentication
 
 First, copy your one-time code:
 
@@ -124,18 +124,18 @@ Opening:
 ⠇ Waiting for authentication...
 ✔ Authentication successful.
 
-Logged in as local-dev@kekkai.io
+Logged in as local-dev@cloak-env.io
 ```
 
-#### 4. Checking Session Status (`kekkai auth status`)
+#### 4. Checking Session Status (`cloak-env auth status`)
 Inspects active connection, logged-in account, and token lifetime:
 ```bash
-$ kekkai auth status
+$ cloak-env auth status
 
-KEKKAI Authentication
+CLOAK-ENV Authentication
 
-Host       https://api.kekkai.io
-Account    dev@kekkai.io
+Host       https://api.cloak-env.io
+Account    dev@cloak-env.io
 Status     Authenticated
 Expires    in 14 minutes
 ```
@@ -144,9 +144,9 @@ Expires    in 14 minutes
 #### 5. Listing & Revoking CLI Devices
 Audit and manage all machines authorized under your account:
 ```bash
-$ kekkai auth devices
+$ cloak-env auth devices
 
-KEKKAI CLI Devices
+CLOAK-ENV CLI Devices
 
 1. MacBook Pro (Work)
    Last used: 10/2/2026, 8:45:10 PM
@@ -158,19 +158,19 @@ KEKKAI CLI Devices
    IP: 203.0.113.42
    ID: cly98z7y6x5w4v3u2t1s0r9q8
 
-To revoke a device: kekkai auth revoke <device-id>
+To revoke a device: cloak-env auth revoke <device-id>
 ```
 
 To immediately revoke a compromised or decommissioned machine:
 ```bash
-$ kekkai auth revoke cly98z7y6x5w4v3u2t1s0r9q8
+$ cloak-env auth revoke cly98z7y6x5w4v3u2t1s0r9q8
 ✔ Device cly98z7y6x5w4v3u2t1s0r9q8 revoked.
 ```
 
-#### 6. Logging Out (`kekkai auth logout`)
+#### 6. Logging Out (`cloak-env auth logout`)
 Revokes the refresh token on the server and scrubs local credentials:
 ```bash
-$ kekkai auth logout
+$ cloak-env auth logout
 ✔ Logged out successfully.
 ```
 
@@ -187,7 +187,7 @@ $ kekkai auth logout
    - Each refresh exchange issues a new token pair and revokes the prior refresh token.
    - If an invalidated refresh token is replayed, the entire session family is revoked immediately.
 3. **Local Credential Storage**:
-   - Persisted to `~/.kekkai/config.json` with strict `0600` POSIX permissions (owner read/write only).
+   - Persisted to `~/.cloak-env/config.json` with strict `0600` POSIX permissions (owner read/write only).
    - Host configuration and token state are decoupled to prevent accidental host leakage.
 4. **Envelope Encryption for Secrets**:
    - Secrets are encrypted with unique DEKs (Data Encryption Keys) using AES-256-GCM.
@@ -200,28 +200,28 @@ $ kekkai auth logout
 
 ### Secret Management
 ```bash
-kekkai init                 # Link directory to a project & environment
-kekkai push                 # Push local .env changes with interactive diff preview
-kekkai pull                 # Pull vault secrets into local .env (--dry-run supported)
-kekkai run -- <command>     # Inject secrets into process memory without writing to disk
-kekkai status               # Inspect project link, environment, and secret drift
-kekkai diff                 # Compare local .env against remote vault
-kekkai set <KEY>            # Interactively set or update a single secret
-kekkai get <KEY>            # Decrypt and display one secret (--copy for clipboard)
-kekkai unset <KEY>          # Delete a secret from the vault
-kekkai list                 # List tracked secret keys (values masked)
-kekkai history <KEY>        # Audit version history of a secret
-kekkai rollback <KEY> -v N  # Revert a secret to a specific version
+cloak-env init                 # Link directory to a project & environment
+cloak-env push                 # Push local .env changes with interactive diff preview
+cloak-env pull                 # Pull vault secrets into local .env (--dry-run supported)
+cloak-env run -- <command>     # Inject secrets into process memory without writing to disk
+cloak-env status               # Inspect project link, environment, and secret drift
+cloak-env diff                 # Compare local .env against remote vault
+cloak-env set <KEY>            # Interactively set or update a single secret
+cloak-env get <KEY>            # Decrypt and display one secret (--copy for clipboard)
+cloak-env unset <KEY>          # Delete a secret from the vault
+cloak-env list                 # List tracked secret keys (values masked)
+cloak-env history <KEY>        # Audit version history of a secret
+cloak-env rollback <KEY> -v N  # Revert a secret to a specific version
 ```
 
 ### Environment & Diagnostics
 ```bash
-kekkai env list             # List available environments (development, staging, prod)
-kekkai env switch <name>    # Switch active local environment
-kekkai projects             # List accessible projects
-kekkai doctor               # Verify .gitignore, credentials, drift, and directory hygiene
-kekkai scan                 # Detect untracked plaintext secrets in local codebase
-kekkai audit                # Stream immutable audit log of secret access
+cloak-env env list             # List available environments (development, staging, prod)
+cloak-env env switch <name>    # Switch active local environment
+cloak-env projects             # List accessible projects
+cloak-env doctor               # Verify .gitignore, credentials, drift, and directory hygiene
+cloak-env scan                 # Detect untracked plaintext secrets in local codebase
+cloak-env audit                # Stream immutable audit log of secret access
 ```
 
 ---
@@ -244,11 +244,11 @@ npm run dev:all
 
 Authenticate your local CLI:
 ```bash
-npx kekkai auth login --local
+npx cloak-env auth login --local
 ```
 
 ---
 
 ## 📄 License
 
-MIT © [KEKKAI](https://kekkai.io)
+MIT © [CLOAK-ENV](https://cloak-env.vercel.app)

@@ -1,7 +1,7 @@
 {
-  "name": "kekkai-monorepo",
+  "name": "cloak-env-monorepo",
   "version": "1.0.0",
-  "description": "KEKKAI - Secure Developer Secret Vault",
+  "description": "CLOAK-ENV - Secure Developer Secret Vault",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "dev": "concurrently \"npm run dev -w @kekkai/api\" \"npm run dev -w kekkai-web\"",
+    "dev": "concurrently \"npm run dev -w @cloak-env/api\" \"npm run dev -w cloak-env-web\"",
     "dev:all": "docker-compose up -d --wait && npx prisma generate && npx prisma db push --accept-data-loss && npm run dev",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"

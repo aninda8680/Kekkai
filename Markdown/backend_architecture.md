@@ -1,10 +1,10 @@
-# KEKKAI Backend Architecture & Flow
+# CLOAK-ENV Backend Architecture & Flow
 
 This document explains the entire backend flow, from database storage to the API, and how the frontend and CLI interact with it.
 
 ## 1. The Big Picture (ASCII Diagram)
 
-Here is the data flow for the KEKKAI ecosystem:
+Here is the data flow for the CLOAK-ENV ecosystem:
 
 ```text
                       +-------------------+
@@ -18,7 +18,7 @@ Here is the data flow for the KEKKAI ecosystem:
                                 |
 +---------------+     +---------v---------+     +-------------------+
 |               |     |                   |     |                   |
-|  KEKKAI CLI   +----->  Express.js API   +----->   PostgreSQL DB   |
+|  CLOAK-ENV CLI   +----->  Express.js API   +----->   PostgreSQL DB   |
 | (Terminal)    |     |  (Backend)        |     |  (Storage)        |
 +---------------+     |  (Port 4000)      |     |  (Port 5432)      |
                       +---------+---------+     +-------------------+
@@ -28,7 +28,7 @@ Here is the data flow for the KEKKAI ecosystem:
 ```
 
 ### How Data Moves:
-1. **User Action:** A user logs in via the Frontend Dashboard or types `kekkai login` in the CLI.
+1. **User Action:** A user logs in via the Frontend Dashboard or types `cloak-env login` in the CLI.
 2. **API Request:** That request is sent via HTTP to the **Express.js API** (the backend).
 3. **Database Query:** The Express API uses **Prisma** to talk to the **PostgreSQL** database.
 4. **Storage:** The PostgreSQL database verifies the credentials and returns the data back to Prisma.
@@ -79,7 +79,7 @@ When you run `docker compose up -d`:
 
 ## 5. How to Run Everything Locally
 
-To start the entire KEKKAI ecosystem on your machine:
+To start the entire CLOAK-ENV ecosystem on your machine:
 
 1. **Start the Database (Storage):**
    ```bash
@@ -110,6 +110,6 @@ When you deploy this to the internet, things change slightly:
 | **Storage (DB)** | Local Docker Container (`docker compose up`) | Managed Cloud Database (e.g., **Neon.tech**, Supabase, AWS RDS). |
 | **Backend API** | Node.js (`npm run dev`) | The Express server is put into its own Docker container and deployed to a host like **Render** or **Railway**. |
 | **Frontend** | Node.js (`npm run dev`) | Hosted on **Vercel** as a serverless application. |
-| **CLI** | Local symlink (`npm link`) | Published to the NPM Registry (`npm publish`) so users can `npm install -g kekkai`. |
+| **CLI** | Local symlink (`npm link`) | Published to the NPM Registry (`npm publish`) so users can `npm install -g cloak-env`. |
 
 In production, you do **not** run `docker-compose`. Instead, Vercel hosts your frontend, Render hosts your Dockerized backend, and Neon hosts your PostgreSQL database.

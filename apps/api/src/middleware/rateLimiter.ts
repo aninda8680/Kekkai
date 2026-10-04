@@ -89,7 +89,7 @@ export const revealLimiter = rateLimit({
 /** Sync push/pull — CLI interactive; generous for normal dev flow. */
 export const syncLimiter = rateLimit({
   ...sharedOpts,
-  max: 200,     // raised from 60 — kekkai run on every dev restart must not trip this
+  max: 200,     // raised from 60 — cloak-env run on every dev restart must not trip this
   keyGenerator: (req) => `sync:${keyGenerator(req as any)}`,
 });
 

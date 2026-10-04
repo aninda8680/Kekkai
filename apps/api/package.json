@@ -1,7 +1,7 @@
 {
-  "name": "@kekkai/api",
+  "name": "@cloak-env/api",
   "version": "1.0.0",
-  "description": "KEKKAI Backend API",
+  "description": "CLOAK-ENV Backend API",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -15,7 +15,7 @@
     "db:generate": "prisma generate"
   },
   "dependencies": {
-    "@kekkai/shared": "*",
+    "cloak-env-shared": "*",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "argon2": "^0.40.1",

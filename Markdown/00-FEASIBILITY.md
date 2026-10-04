@@ -1,11 +1,11 @@
-# KEKKAI — Feasibility & Alternatives Analysis
+# CLOAK-ENV — Feasibility & Alternatives Analysis
 
 ## 1. Is this a real, viable problem?
 
 Yes. "Where do secrets live when the laptop dies / the team grows / the repo can't hold them" is a
 solved-but-still-painful problem, which is exactly the sweet spot for a project like this — there's
 proof the market wants it (see §2), but there's still room to build something with a sharper
-developer experience, especially for the India/student/indie-hacker segment KEKKAI is aimed at.
+developer experience, especially for the India/student/indie-hacker segment CLOAK-ENV is aimed at.
 
 You are **not** the first to build this. That's good news, not bad news — it means the architecture
 is well understood and battle-tested. Your job is not to invent secret management; it's to build a
@@ -37,7 +37,7 @@ cache regenerated on demand.** That reframing changes several design decisions i
 
 - `.env` files become fully disposable — losing a laptop is a non-event.
 - You can safely encourage `.gitignore`'d, ephemeral `.env` files, or skip them entirely with
-  `kekkai run` (process-level injection), which is strictly safer than writing plaintext to disk.
+  `cloak-env run` (process-level injection), which is strictly safer than writing plaintext to disk.
 - Versioning and audit logs become the actual product, not a nice-to-have.
 
 ## 4. Are there better/alternative ways to "store the .env"?
@@ -47,7 +47,7 @@ Worth naming explicitly, since you asked:
 1. **Git-native encrypted files (SOPS/age/git-crypt)** — secrets live *in* the repo, encrypted.
    Pro: reviewable diffs, no separate server to trust. Con: no live audit trail, no per-secret
    access control, key distribution is still a manual problem, doesn't solve "revoke access for
-   one teammate" cleanly. Good as a *complementary* export target for KEKKAI (`kekkai export --sops`),
+   one teammate" cleanly. Good as a *complementary* export target for CLOAK-ENV (`cloak-env export --sops`),
    not a replacement for the vault model.
 2. **OS keychain / local secret store (macOS Keychain, libsecret)** — great for *local* secrets,
    solves nothing for team sync or disaster recovery across machines.

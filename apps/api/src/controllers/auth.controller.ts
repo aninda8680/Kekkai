@@ -30,7 +30,7 @@ import {
 import { AuthRequest } from '../middleware/auth';
 import crypto from 'node:crypto';
 
-const REFRESH_COOKIE = 'kekkai_refresh';
+const REFRESH_COOKIE = 'cloak-env_refresh';
 const isProduction = process.env.NODE_ENV === 'production';
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -241,7 +241,7 @@ export const refresh = async (req: Request, res: Response) => {
         metadata: JSON.stringify({ familyId: stored.familyId }),
       },
     }).catch(() => {});
-    return res.status(401).json({ error: 'Your KEKKAI session was revoked. Please run: kekkai auth login' });
+    return res.status(401).json({ error: 'Your CLOAK-ENV session was revoked. Please run: cloak-env auth login' });
   }
 
   await prisma.refreshToken.update({ where: { id: stored.id }, data: { used: true } });
@@ -276,7 +276,7 @@ export const refresh = async (req: Request, res: Response) => {
 // ─── Device-Code Flow — Step 1 (CLI initiates) ────────────────────────────
 
 export const deviceCodeInitiate = async (req: Request, res: Response) => {
-  const requestDevice = req.headers['x-kekkai-device'] as string | undefined;
+  const requestDevice = req.headers['x-cloak-env-device'] as string | undefined;
   const requestIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress;
 
   // P0.1: Raw device code — only given to CLI; we store the HASH
@@ -332,7 +332,7 @@ export const deviceCodePoll = async (req: Request, res: Response) => {
         data: { userId: record.userId, action: 'CLI_LOGIN_EXPIRED', ipAddress: record.requestIp ?? undefined },
       }).catch(() => {});
     }
-    return res.status(400).json({ status: 'expired', error: 'Device code expired. Run `kekkai auth login` to try again.' });
+    return res.status(400).json({ status: 'expired', error: 'Device code expired. Run `cloak-env auth login` to try again.' });
   }
 
   // Enforce minimum polling interval (slow_down)

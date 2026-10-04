@@ -17,7 +17,7 @@ export default function Home() {
             <div className="w-8 h-8 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <span className="font-bold text-lg tracking-tighter text-white">K</span>
             </div>
-            <span className="font-semibold text-xl tracking-wide">KEKKAI</span>
+            <span className="font-semibold text-xl tracking-wide">CLOAK-ENV</span>
           </div>
           <div className="flex items-center gap-6 text-sm font-medium text-gray-300">
             <Link href="#features" className="hover:text-white transition-colors">Features</Link>
@@ -44,7 +44,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
-            Kekkai v1.0 is now live
+            CloakEnv v1.0 is now live
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 max-w-4xl bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
@@ -118,7 +118,7 @@ export default function Home() {
               <p className="text-gray-300 leading-relaxed max-w-md">
                 Inject secrets directly into your local development environment without ever touching a .env file again. 
                 <code className="block mt-4 p-3 bg-black/50 rounded-lg text-sm text-indigo-300 border border-white/10 font-mono">
-                  $ npx kekkai run -- npm run dev
+                  $ npx cloak-env run -- npm run dev
                 </code>
               </p>
             </div>

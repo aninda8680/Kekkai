@@ -1,13 +1,13 @@
 # Production Deployment Guide
 
-This guide outlines the essential steps and considerations for deploying the KEKKAI monorepo to production.
+This guide outlines the essential steps and considerations for deploying the CLOAK-ENV monorepo to production.
 
 ## 1. Architecture Overview
 
 - **Frontend (Web Dashboard):** Hosted on Vercel or Netlify.
 - **Backend (API):** Hosted on Render, Railway, or AWS (via Docker).
 - **Database:** Managed PostgreSQL provider (e.g., Neon or Supabase PostgreSQL).
-- **CLI:** Published to the NPM Registry for users to download via `npm install -g kekkai`.
+- **CLI:** Published to the NPM Registry for users to download via `npm install -g cloak-env`.
 
 ## 2. Deploying the Backend API (Docker)
 
@@ -39,7 +39,7 @@ CMD ["npm", "start", "-w", "apps/api"]
 ```
 
 > **Important:** To build this image, you must run the build command from the root folder: 
-> `docker build -t kekkai-api -f apps/api/Dockerfile .`
+> `docker build -t cloak-env-api -f apps/api/Dockerfile .`
 
 ## 3. Database Migrations in Production
 
@@ -57,13 +57,13 @@ npx prisma migrate deploy
 Vercel natively supports monorepos, but it needs to know which app to build.
 
 1. Import your GitHub repository into Vercel.
-2. In the project settings, set the **Root Directory** to `apps/kekkai-web`.
+2. In the project settings, set the **Root Directory** to `apps/cloak-env-web`.
 3. Vercel will automatically detect the Next.js/Vite setup and install dependencies from the root level.
 4. Ensure you add any required environment variables to the Vercel dashboard.
 
 ## 5. Publishing the CLI
 
-To allow other developers to use `kekkai`, you must publish the CLI to the NPM registry.
+To allow other developers to use `cloak-env`, you must publish the CLI to the NPM registry.
 
 1. Ensure your CLI package (`packages/cli/package.json`) has a unique name, version, and the `"bin"` field configured.
 2. Build the CLI package.
@@ -74,5 +74,5 @@ To allow other developers to use `kekkai`, you must publish the CLI to the NPM r
 
 Once published, users can install it globally:
 ```bash
-npm install -g kekkai
+npm install -g cloak-env
 ```

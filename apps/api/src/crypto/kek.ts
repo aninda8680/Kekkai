@@ -20,11 +20,11 @@ function getKek(): Buffer {
   if (_kek) return _kek;
 
   const raw = process.env.MASTER_KEK;
-  if (!raw) throw new Error('[KEKKAI BOOT] MASTER_KEK is not set — cannot start');
-  if (raw.length !== 64) throw new Error('[KEKKAI BOOT] MASTER_KEK must be exactly 64 hex characters (32 bytes)');
+  if (!raw) throw new Error('[CLOAK-ENV BOOT] MASTER_KEK is not set — cannot start');
+  if (raw.length !== 64) throw new Error('[CLOAK-ENV BOOT] MASTER_KEK must be exactly 64 hex characters (32 bytes)');
 
   _kek = Buffer.from(raw, 'hex');
-  if (_kek.length !== 32) throw new Error('[KEKKAI BOOT] MASTER_KEK decoded to wrong byte length');
+  if (_kek.length !== 32) throw new Error('[CLOAK-ENV BOOT] MASTER_KEK decoded to wrong byte length');
 
   return _kek;
 }

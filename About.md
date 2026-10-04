@@ -1,9 +1,9 @@
-# KEKKAI
+# CLOAK-ENV
 
 > **Secure developer secret vault for storing, synchronizing, recovering, and using environment variables across projects and machines.**
 
 **Tagline:**  
-> Your code belongs in Git. Your secrets belong in KEKKAI.
+> Your code belongs in Git. Your secrets belong in CLOAK-ENV.
 
 ---
 
@@ -11,7 +11,7 @@
 
 1. [Project Overview](#1-project-overview)
 2. [The Problem](#2-the-problem)
-3. [The KEKKAI Solution](#3-the-kekkai-solution)
+3. [The CLOAK-ENV Solution](#3-the-cloak-env-solution)
 4. [Project Vision](#4-project-vision)
 5. [Core Concept](#5-core-concept)
 6. [Main Features](#6-main-features)
@@ -22,10 +22,10 @@
 11. [Core Concepts](#11-core-concepts)
 12. [User Workflow](#12-user-workflow)
 13. [CLI Commands](#13-cli-commands)
-14. [init](#14-kekkai-init)
-15. [push](#15-kekkai-push)
-16. [pull](#16-kekkai-pull)
-17. [run](#17-kekkai-run)
+14. [init](#14-cloak-env-init)
+15. [push](#15-cloak-env-push)
+16. [pull](#16-cloak-env-pull)
+17. [run](#17-cloak-env-run)
 18. [CLI Command Summary](#18-cli-command-summary)
 19. [Web Dashboard](#19-web-dashboard)
 20. [Backend Architecture](#20-backend-architecture)
@@ -66,7 +66,7 @@
 
 # 1. Project Overview
 
-**KEKKAI** is a developer-focused cloud secret management platform.
+**CLOAK-ENV** is a developer-focused cloud secret management platform.
 
 Its purpose is to securely store application secrets such as:
 
@@ -82,7 +82,7 @@ AWS_SECRET_ACCESS_KEY=...
 
 without requiring developers to commit `.env` files to GitHub.
 
-KEKKAI provides:
+CLOAK-ENV provides:
 
 - Secure cloud secret storage
 - Project organization
@@ -195,9 +195,9 @@ Some deployment providers also intentionally prevent users from revealing certai
 
 ---
 
-# 3. The KEKKAI Solution
+# 3. The CLOAK-ENV Solution
 
-KEKKAI introduces a secure cloud vault.
+CLOAK-ENV introduces a secure cloud vault.
 
 Instead of treating `.env` as the source of truth:
 
@@ -205,10 +205,10 @@ Instead of treating `.env` as the source of truth:
 .env
 ```
 
-KEKKAI becomes the source of truth:
+CLOAK-ENV becomes the source of truth:
 
 ```text
-                    KEKKAI
+                    CLOAK-ENV
               Encrypted Secret Vault
                        |
           ┌────────────┼────────────┐
@@ -220,20 +220,20 @@ KEKKAI becomes the source of truth:
 The developer can synchronize secrets using:
 
 ```bash
-kekkai push
+cloak-env push
 ```
 
 and restore them using:
 
 ```bash
-kekkai pull
+cloak-env pull
 ```
 
 ---
 
 # 4. Project Vision
 
-The long-term vision of KEKKAI is:
+The long-term vision of CLOAK-ENV is:
 
 > **A secure developer infrastructure platform where application secrets can be securely managed across local development, teams, CI/CD pipelines, and cloud deployments.**
 
@@ -257,14 +257,14 @@ Encryption
 
 # 5. Core Concept
 
-KEKKAI should not simply be considered:
+CLOAK-ENV should not simply be considered:
 
 > "Google Drive for `.env` files."
 
 The better architecture is:
 
 ```text
-                    KEKKAI
+                    CLOAK-ENV
               Source of Truth
                     |
        ┌────────────┼─────────────┐
@@ -299,10 +299,10 @@ The `.env` file becomes a local representation of the environment.
 - Audit logging
 - Web dashboard
 - CLI authentication
-- `kekkai init`
-- `kekkai push`
-- `kekkai pull`
-- `kekkai run`
+- `cloak-env init`
+- `cloak-env push`
+- `cloak-env pull`
+- `cloak-env run`
 - `.gitignore` protection
 - Authorization
 - Rate limiting
@@ -445,7 +445,7 @@ GitHub
 
 ## Package Manager
 
-KEKKAI will use:
+CLOAK-ENV will use:
 
 ```text
 npm
@@ -521,7 +521,7 @@ CLI requests
 
 ## PostgreSQL
 
-PostgreSQL is suitable because KEKKAI has relational data:
+PostgreSQL is suitable because CLOAK-ENV has relational data:
 
 ```text
 User
@@ -569,7 +569,7 @@ flowchart TD
     USER[Developer]
 
     WEB[React Web Dashboard]
-    CLI[KEKKAI CLI]
+    CLI[CLOAK-ENV CLI]
     IDE[Future IDE Extension]
 
     API[Node.js + Express API]
@@ -613,10 +613,10 @@ flowchart TD
 
 # 10. Repository Structure
 
-KEKKAI should use an npm workspace monorepo.
+CLOAK-ENV should use an npm workspace monorepo.
 
 ```text
-kekkai/
+cloak-env/
 │
 ├── apps/
 │   │
@@ -682,7 +682,7 @@ kekkai/
 
 # 11. Core Concepts
 
-KEKKAI has four primary concepts.
+CLOAK-ENV has four primary concepts.
 
 ---
 
@@ -761,15 +761,15 @@ The basic developer workflow is:
 ```text
 Create project
       ↓
-Install KEKKAI CLI
+Install CLOAK-ENV CLI
       ↓
 Login
       ↓
-kekkai init
+cloak-env init
       ↓
 Connect project
       ↓
-kekkai push
+cloak-env push
       ↓
 Encrypt + upload secrets
       ↓
@@ -781,13 +781,13 @@ On another machine:
 ```text
 Clone GitHub repository
       ↓
-Install KEKKAI CLI
+Install CLOAK-ENV CLI
       ↓
 Login
       ↓
-kekkai init
+cloak-env init
       ↓
-kekkai pull
+cloak-env pull
       ↓
 Restore environment
       ↓
@@ -797,56 +797,56 @@ npm run dev
 Or:
 
 ```text
-kekkai run npm run dev
+cloak-env run npm run dev
 ```
 
 ---
 
 # 13. CLI Commands
 
-The primary KEKKAI CLI commands are:
+The primary CLOAK-ENV CLI commands are:
 
 ```bash
-kekkai login
-kekkai init
-kekkai push
-kekkai pull
-kekkai run
+cloak-env login
+cloak-env init
+cloak-env push
+cloak-env pull
+cloak-env run
 ```
 
 Future commands:
 
 ```bash
-kekkai projects
-kekkai env
-kekkai secrets
-kekkai set
-kekkai get
-kekkai delete
-kekkai history
-kekkai rollback
-kekkai rotate
-kekkai team
+cloak-env projects
+cloak-env env
+cloak-env secrets
+cloak-env set
+cloak-env get
+cloak-env delete
+cloak-env history
+cloak-env rollback
+cloak-env rotate
+cloak-env team
 ```
 
 ---
 
-# 14. `kekkai init`
+# 14. `cloak-env init`
 
 ## Purpose
 
-Connect the current project directory to a KEKKAI project/environment.
+Connect the current project directory to a CLOAK-ENV project/environment.
 
 Run:
 
 ```bash
-kekkai init
+cloak-env init
 ```
 
 Example:
 
 ```text
-$ kekkai init
+$ cloak-env init
 
 Select project:
 
@@ -864,10 +864,10 @@ Select environment:
 ✓ Environment connected
 ```
 
-KEKKAI can create:
+CLOAK-ENV can create:
 
 ```text
-.kekkai/
+.cloak-env/
     config.json
 ```
 
@@ -886,11 +886,11 @@ It must never contain secret values.
 
 ---
 
-# 15. `kekkai push`
+# 15. `cloak-env push`
 
 ## Purpose
 
-Upload local environment variables into KEKKAI.
+Upload local environment variables into CLOAK-ENV.
 
 Suppose:
 
@@ -909,10 +909,10 @@ FIREBASE_API_KEY=xyz789...
 Run:
 
 ```bash
-kekkai push
+cloak-env push
 ```
 
-KEKKAI should show a confirmation:
+CLOAK-ENV should show a confirmation:
 
 ```text
 Reading .env...
@@ -946,11 +946,11 @@ Uploading...
 
 ---
 
-# 16. `kekkai pull`
+# 16. `cloak-env pull`
 
 ## Purpose
 
-Restore secrets from KEKKAI into the local project.
+Restore secrets from CLOAK-ENV into the local project.
 
 Suppose the developer gets a new laptop.
 
@@ -971,12 +971,12 @@ doesn't exist.
 They run:
 
 ```bash
-kekkai login
-kekkai init
-kekkai pull
+cloak-env login
+cloak-env init
+cloak-env pull
 ```
 
-KEKKAI retrieves the encrypted secrets.
+CLOAK-ENV retrieves the encrypted secrets.
 
 The CLI decrypts them according to the chosen key-management architecture.
 
@@ -1000,7 +1000,7 @@ After confirmation:
 
 ---
 
-# 17. `kekkai run`
+# 17. `cloak-env run`
 
 ## Purpose
 
@@ -1009,13 +1009,13 @@ Run an application with secrets injected into its process environment.
 Example:
 
 ```bash
-kekkai run npm run dev
+cloak-env run npm run dev
 ```
 
 Conceptually:
 
 ```text
-KEKKAI
+CLOAK-ENV
    |
    ↓
 Fetch authorized secrets
@@ -1044,16 +1044,16 @@ without requiring the secret to be permanently written into `.env`.
 
 | Command | Meaning |
 |---|---|
-| `kekkai login` | Authenticate the developer |
-| `kekkai init` | Connect current directory to a KEKKAI project/environment |
-| `kekkai push` | Upload local secrets to KEKKAI |
-| `kekkai pull` | Restore secrets from KEKKAI to `.env` |
-| `kekkai run ...` | Run an application with secrets injected |
-| `kekkai projects` | List projects |
-| `kekkai secrets` | List secret metadata |
-| `kekkai history` | View secret versions |
-| `kekkai rollback` | Restore a previous secret version |
-| `kekkai rotate` | Start a secret rotation workflow |
+| `cloak-env login` | Authenticate the developer |
+| `cloak-env init` | Connect current directory to a CLOAK-ENV project/environment |
+| `cloak-env push` | Upload local secrets to CLOAK-ENV |
+| `cloak-env pull` | Restore secrets from CLOAK-ENV to `.env` |
+| `cloak-env run ...` | Run an application with secrets injected |
+| `cloak-env projects` | List projects |
+| `cloak-env secrets` | List secret metadata |
+| `cloak-env history` | View secret versions |
+| `cloak-env rollback` | Restore a previous secret version |
+| `cloak-env rotate` | Start a secret rotation workflow |
 
 ---
 
@@ -1090,7 +1090,7 @@ Recommended pages:
 
 ```text
 ┌──────────────────────────────────────────────┐
-│ KEKKAI                              Account  │
+│ CLOAK-ENV                              Account  │
 ├───────────────┬──────────────────────────────┤
 │ Dashboard     │ Club Connect                 │
 │ Projects      │                              │
@@ -1483,7 +1483,7 @@ The exact permissions should be defined before implementing team functionality.
 
 # 27. Encryption
 
-This is one of the most important components of KEKKAI.
+This is one of the most important components of CLOAK-ENV.
 
 The database must not contain plaintext secret values.
 
@@ -1594,7 +1594,7 @@ Production systems should consider managed KMS/HSM solutions.
 
 # 31. Zero-Knowledge Architecture
 
-A future advanced version of KEKKAI can move toward client-side encryption.
+A future advanced version of CLOAK-ENV can move toward client-side encryption.
 
 Conceptually:
 
@@ -1604,7 +1604,7 @@ Conceptually:
              Encrypt / Decrypt
                     |
                     ↓
-               KEKKAI API
+               CLOAK-ENV API
                     |
                     ↓
             Encrypted Database
@@ -1692,13 +1692,13 @@ v1
 CLI:
 
 ```bash
-kekkai history JWT_SECRET
+cloak-env history JWT_SECRET
 ```
 
 Future:
 
 ```bash
-kekkai rollback JWT_SECRET --version 2
+cloak-env rollback JWT_SECRET --version 2
 ```
 
 ---
@@ -1725,7 +1725,7 @@ Verify
 Revoke Old API Key
 ```
 
-KEKKAI should eventually provide workflows for this.
+CLOAK-ENV should eventually provide workflows for this.
 
 It should not automatically rotate external credentials unless an integration explicitly supports it.
 
@@ -1775,7 +1775,7 @@ User changed MONGODB_URI to mongodb+srv://username:password...
 
 # 36. Security Requirements
 
-KEKKAI handles extremely sensitive information.
+CLOAK-ENV handles extremely sensitive information.
 
 Security must be treated as a core feature.
 
@@ -1845,7 +1845,7 @@ Production traffic:
 ```text
 CLI
  ↓ HTTPS
-KEKKAI API
+CLOAK-ENV API
 ```
 
 ---
@@ -1858,7 +1858,7 @@ Users should receive only the access required for their role.
 
 # 37. Threat Model
 
-KEKKAI should consider the following threats.
+CLOAK-ENV should consider the following threats.
 
 ---
 
@@ -1996,13 +1996,13 @@ Important limitation:
 
 If the developer's machine is already compromised, an attacker may access secrets while they are being used.
 
-KEKKAI cannot completely protect secrets on a fully compromised endpoint.
+CLOAK-ENV cannot completely protect secrets on a fully compromised endpoint.
 
 ---
 
 # 38. `.env` Protection
 
-KEKKAI must encourage:
+CLOAK-ENV must encourage:
 
 ```gitignore
 .env
@@ -2041,10 +2041,10 @@ FIREBASE_API_KEY=
 
 No real values should be included.
 
-KEKKAI may eventually provide:
+CLOAK-ENV may eventually provide:
 
 ```bash
-kekkai example
+cloak-env example
 ```
 
 to generate a safe `.env.example`.
@@ -2116,7 +2116,7 @@ Use explicit allowed origins.
 Example:
 
 ```text
-https://kekkai.example.com
+https://cloak-env.example.com
 ```
 
 ---
@@ -2180,7 +2180,7 @@ The CLI should:
 Avoid:
 
 ```bash
-kekkai set JWT_SECRET my-super-secret
+cloak-env set JWT_SECRET my-super-secret
 ```
 
 because shell history can retain the secret.
@@ -2188,7 +2188,7 @@ because shell history can retain the secret.
 Prefer:
 
 ```bash
-kekkai set JWT_SECRET
+cloak-env set JWT_SECRET
 ```
 
 and securely prompt:
@@ -2202,14 +2202,14 @@ Enter secret:
 
 # 46. Disaster Recovery
 
-This is one of KEKKAI's primary use cases.
+This is one of CLOAK-ENV's primary use cases.
 
 ---
 
 ## Old Laptop
 
 ```bash
-kekkai push
+cloak-env push
 ```
 
 Result:
@@ -2247,13 +2247,13 @@ cd project
 
 npm install
 
-npm install -g kekkai
+npm install -g cloak-env
 
-kekkai login
+cloak-env login
 
-kekkai init
+cloak-env init
 
-kekkai pull
+cloak-env pull
 ```
 
 Result:
@@ -2270,7 +2270,7 @@ The developer can continue working.
 
 Cloud backup is only useful if the user can still authenticate and, depending on the encryption architecture, recover the required decryption capability.
 
-Therefore KEKKAI must eventually have a carefully designed:
+Therefore CLOAK-ENV must eventually have a carefully designed:
 
 ```text
 Account Recovery
@@ -2323,22 +2323,22 @@ Example:
 services:
   postgres:
     image: postgres:16
-    container_name: kekkai-postgres
+    container_name: cloak-env-postgres
     restart: unless-stopped
 
     environment:
-      POSTGRES_USER: kekkai
-      POSTGRES_PASSWORD: kekkai_dev_password
-      POSTGRES_DB: kekkai
+      POSTGRES_USER: cloak-env
+      POSTGRES_PASSWORD: cloak-env_dev_password
+      POSTGRES_DB: cloak-env
 
     ports:
       - "5432:5432"
 
     volumes:
-      - kekkai_postgres_data:/var/lib/postgresql/data
+      - cloak-env_postgres_data:/var/lib/postgresql/data
 
 volumes:
-  kekkai_postgres_data:
+  cloak-env_postgres_data:
 ```
 
 Start:
@@ -2374,7 +2374,7 @@ because it deletes the local database volume.
 For local development:
 
 ```env
-DATABASE_URL="postgresql://kekkai:kekkai_dev_password@localhost:5432/kekkai"
+DATABASE_URL="postgresql://cloak-env:cloak-env_dev_password@localhost:5432/cloak-env"
 ```
 
 This belongs in the backend's local environment configuration.
@@ -2383,9 +2383,9 @@ It must not be committed.
 
 ---
 
-# 51. KEKKAI's Own Environment Variables
+# 51. CLOAK-ENV's Own Environment Variables
 
-The KEKKAI backend itself will require secrets.
+The CLOAK-ENV backend itself will require secrets.
 
 Example:
 
@@ -2528,11 +2528,11 @@ Settings
 Implement:
 
 ```text
-kekkai login
-kekkai init
-kekkai push
-kekkai pull
-kekkai run
+cloak-env login
+cloak-env init
+cloak-env push
+cloak-env pull
+cloak-env run
 ```
 
 ---
@@ -2698,11 +2698,11 @@ without exposing sensitive information.
 sequenceDiagram
 
     participant DEV as Developer
-    participant CLI as KEKKAI CLI
-    participant API as KEKKAI API
+    participant CLI as CLOAK-ENV CLI
+    participant API as CLOAK-ENV API
     participant DB as PostgreSQL
 
-    DEV->>CLI: kekkai push
+    DEV->>CLI: cloak-env push
 
     CLI->>CLI: Read .env
     CLI->>CLI: Validate variables
@@ -2730,11 +2730,11 @@ sequenceDiagram
 sequenceDiagram
 
     participant DEV as Developer
-    participant CLI as KEKKAI CLI
-    participant API as KEKKAI API
+    participant CLI as CLOAK-ENV CLI
+    participant API as CLOAK-ENV API
     participant DB as PostgreSQL
 
-    DEV->>CLI: kekkai pull
+    DEV->>CLI: cloak-env pull
 
     CLI->>API: Authenticate
 
@@ -2763,11 +2763,11 @@ sequenceDiagram
 sequenceDiagram
 
     participant DEV as Developer
-    participant CLI as KEKKAI CLI
-    participant API as KEKKAI API
+    participant CLI as CLOAK-ENV CLI
+    participant API as CLOAK-ENV API
     participant APP as Application
 
-    DEV->>CLI: kekkai run npm run dev
+    DEV->>CLI: cloak-env run npm run dev
 
     CLI->>API: Request environment secrets
 
@@ -2796,7 +2796,7 @@ flowchart TD
 
     WEB[React Dashboard]
 
-    CLI[KEKKAI CLI]
+    CLI[CLOAK-ENV CLI]
 
     API[Node + Express API]
 
@@ -2845,13 +2845,13 @@ flowchart LR
 
     A[Developer creates project]
 
-    B[npm install -g kekkai]
+    B[npm install -g cloak-env]
 
-    C[kekkai login]
+    C[cloak-env login]
 
-    D[kekkai init]
+    D[cloak-env init]
 
-    E[kekkai push]
+    E[cloak-env push]
 
     F[Encrypt secrets]
 
@@ -2865,11 +2865,11 @@ flowchart LR
 
     K[git clone]
 
-    L[kekkai login]
+    L[cloak-env login]
 
-    M[kekkai init]
+    M[cloak-env init]
 
-    N[kekkai pull]
+    N[cloak-env pull]
 
     O[Environment restored]
 
@@ -2896,13 +2896,13 @@ flowchart LR
 
 # 60. Monorepo Architecture
 
-KEKKAI uses npm workspaces.
+CLOAK-ENV uses npm workspaces.
 
 Root:
 
 ```json
 {
-  "name": "kekkai",
+  "name": "cloak-env",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -3071,7 +3071,7 @@ build/
 .env.*
 !.env.example
 
-.kekkai/*.secret
+.cloak-env/*.secret
 
 coverage/
 
@@ -3084,7 +3084,7 @@ coverage/
 
 # 66. Secret Scanning
 
-A future KEKKAI feature can scan for common secret patterns.
+A future CLOAK-ENV feature can scan for common secret patterns.
 
 Examples:
 
@@ -3103,7 +3103,7 @@ If a developer attempts:
 git commit
 ```
 
-KEKKAI could eventually warn:
+CLOAK-ENV could eventually warn:
 
 ```text
 ⚠ Potential secret detected.
@@ -3148,7 +3148,7 @@ Possible workflow:
 GitHub Repository
        |
        ↓
-KEKKAI GitHub Integration
+CLOAK-ENV GitHub Integration
        |
        ↓
 Detect project
@@ -3168,7 +3168,7 @@ GitHub integration must never automatically expose secret values.
 Potential workflow:
 
 ```text
-KEKKAI
+CLOAK-ENV
    |
    ↓
 Vercel API
@@ -3180,7 +3180,7 @@ Development / Preview / Production
 Example future command:
 
 ```bash
-kekkai deploy vercel
+cloak-env deploy vercel
 ```
 
 This should only synchronize secrets after explicit authorization and confirmation.
@@ -3192,7 +3192,7 @@ This should only synchronize secrets after explicit authorization and confirmati
 Similarly:
 
 ```text
-KEKKAI
+CLOAK-ENV
    |
    ↓
 Render API
@@ -3201,7 +3201,7 @@ Render API
 Service Environment Variables
 ```
 
-This can eventually eliminate manual copying between KEKKAI and Render.
+This can eventually eliminate manual copying between CLOAK-ENV and Render.
 
 ---
 
@@ -3212,7 +3212,7 @@ Potential interface:
 ```text
 VS Code
 │
-└── KEKKAI
+└── CLOAK-ENV
     │
     ├── Projects
     ├── Development
@@ -3221,17 +3221,17 @@ VS Code
     │
     ├── Pull Secrets
     ├── Push Secrets
-    └── Run With KEKKAI
+    └── Run With CLOAK-ENV
 ```
 
 Possible commands:
 
 ```text
-KEKKAI: Login
-KEKKAI: Initialize Project
-KEKKAI: Pull Secrets
-KEKKAI: Push Secrets
-KEKKAI: Run With Secrets
+CLOAK-ENV: Login
+CLOAK-ENV: Initialize Project
+CLOAK-ENV: Pull Secrets
+CLOAK-ENV: Push Secrets
+CLOAK-ENV: Run With Secrets
 ```
 
 Automatic `.env` upload should not be enabled without explicit user confirmation.
@@ -3253,7 +3253,7 @@ Automatically upload
 Instead:
 
 ```text
-KEKKAI detected .env
+CLOAK-ENV detected .env
 
 7 variables found.
 
@@ -3392,25 +3392,25 @@ my-project/
 Install:
 
 ```bash
-npm install -g kekkai
+npm install -g cloak-env
 ```
 
 Login:
 
 ```bash
-kekkai login
+cloak-env login
 ```
 
 Initialize:
 
 ```bash
-kekkai init
+cloak-env init
 ```
 
 Push:
 
 ```bash
-kekkai push
+cloak-env push
 ```
 
 Secrets are encrypted and synchronized.
@@ -3418,7 +3418,7 @@ Secrets are encrypted and synchronized.
 Later:
 
 ```bash
-kekkai pull
+cloak-env pull
 ```
 
 restores:
@@ -3430,7 +3430,7 @@ restores:
 Or:
 
 ```bash
-kekkai run npm run dev
+cloak-env run npm run dev
 ```
 
 runs the application with injected secrets.
@@ -3442,13 +3442,13 @@ runs the application with injected secrets.
 ### Old laptop
 
 ```bash
-kekkai push
+cloak-env push
 ```
 
 Cloud:
 
 ```text
-KEKKAI
+CLOAK-ENV
  └── Encrypted Secrets
 ```
 
@@ -3467,13 +3467,13 @@ cd my-project
 
 npm install
 
-npm install -g kekkai
+npm install -g cloak-env
 
-kekkai login
+cloak-env login
 
-kekkai init
+cloak-env init
 
-kekkai pull
+cloak-env pull
 ```
 
 Result:
@@ -3495,7 +3495,7 @@ npm run dev
 
 # 79. Core Security Principle
 
-The most important KEKKAI security principle is:
+The most important CLOAK-ENV security principle is:
 
 > **Minimize plaintext secret exposure.**
 
@@ -3523,9 +3523,9 @@ Minimal secret exposure
 
 ---
 
-# 80. What KEKKAI Must Never Do
+# 80. What CLOAK-ENV Must Never Do
 
-KEKKAI must never:
+CLOAK-ENV must never:
 
 - Store plaintext passwords
 - Store plaintext secrets unnecessarily
@@ -3556,7 +3556,7 @@ Security is part of the architecture.
 
 ## Explicit User Control
 
-KEKKAI should not silently upload or reveal secrets.
+CLOAK-ENV should not silently upload or reveal secrets.
 
 ---
 
@@ -3585,21 +3585,21 @@ The secure workflow should remain simple.
 Ideally:
 
 ```bash
-kekkai login
-kekkai init
-kekkai push
+cloak-env login
+cloak-env init
+cloak-env push
 ```
 
 and later:
 
 ```bash
-kekkai pull
+cloak-env pull
 ```
 
 or:
 
 ```bash
-kekkai run npm run dev
+cloak-env run npm run dev
 ```
 
 ---
@@ -3614,11 +3614,11 @@ flowchart TB
     subgraph LOCAL[Developer Machine]
         PROJECT[Project]
         ENVFILE[.env]
-        CLI[KEKKAI CLI]
+        CLI[CLOAK-ENV CLI]
         APP[Application]
     end
 
-    subgraph KEKKAI[KEKKAI Platform]
+    subgraph CLOAK-ENV[CLOAK-ENV Platform]
         WEB[React Dashboard]
         API[Node + Express API]
         AUTH[Authentication]
@@ -3655,7 +3655,7 @@ flowchart TB
 
 ```text
                          ┌───────────────────────┐
-                         │       KEKKAI          │
+                         │       CLOAK-ENV          │
                          │                       │
                          │ Secure Secret Vault   │
                          └───────────┬───────────┘
@@ -3668,7 +3668,7 @@ flowchart TB
              Development         Staging            Production
                  │
                  ↓
-          KEKKAI CLI
+          CLOAK-ENV CLI
                  │
         ┌────────┼─────────┐
         ↓        ↓         ↓
@@ -3682,7 +3682,7 @@ flowchart TB
 
 Alternative:
 
-kekkai run npm run dev
+cloak-env run npm run dev
             │
             ↓
       Inject Secrets
@@ -3693,7 +3693,7 @@ kekkai run npm run dev
 
 ---
 
-# 84. KEKKAI Command Philosophy
+# 84. CLOAK-ENV Command Philosophy
 
 Think of the commands like this:
 
@@ -3704,7 +3704,7 @@ login
 
 init
   ↓
-"Which KEKKAI project is this folder connected to?"
+"Which CLOAK-ENV project is this folder connected to?"
 
 push
   ↓
@@ -3716,7 +3716,7 @@ pull
 
 run
   ↓
-"Run my application using KEKKAI secrets."
+"Run my application using CLOAK-ENV secrets."
 ```
 
 ---
@@ -3725,28 +3725,28 @@ run
 
 ```bash
 # Authenticate
-kekkai login
+cloak-env login
 
 # Connect current folder
-kekkai init
+cloak-env init
 
 # Upload local secrets
-kekkai push
+cloak-env push
 
 # Restore secrets
-kekkai pull
+cloak-env pull
 
 # Run application with secrets
-kekkai run npm run dev
+cloak-env run npm run dev
 ```
 
 ---
 
 # 86. Final Project Definition
 
-## KEKKAI
+## CLOAK-ENV
 
-> **KEKKAI is a secure developer secret vault designed to securely store, synchronize, recover, and use environment variables across development machines and environments.**
+> **CLOAK-ENV is a secure developer secret vault designed to securely store, synchronize, recover, and use environment variables across development machines and environments.**
 
 ### Primary Stack
 
@@ -3803,7 +3803,7 @@ npm Workspaces
 # 87. Core Workflow
 
 ```text
-                    KEKKAI
+                    CLOAK-ENV
                        │
                        │
               ┌────────┴────────┐
@@ -3819,7 +3819,7 @@ npm Workspaces
 
 Alternative:
 
-kekkai run npm run dev
+cloak-env run npm run dev
            │
            ↓
       Secret Injection
@@ -3832,19 +3832,19 @@ kekkai run npm run dev
 
 # 88. Final Principle
 
-The fundamental rule of KEKKAI is:
+The fundamental rule of CLOAK-ENV is:
 
 ```text
 ┌──────────────────────────────────────────────┐
 │                                              │
 │       YOUR CODE      →      GIT             │
 │                                              │
-│       YOUR SECRETS   →      KEKKAI          │
+│       YOUR SECRETS   →      CLOAK-ENV          │
 │                                              │
 └──────────────────────────────────────────────┘
 ```
 
-KEKKAI should make secure secret management simple enough that a developer can use it as part of their normal workflow without constantly thinking about where their `.env` file is.
+CLOAK-ENV should make secure secret management simple enough that a developer can use it as part of their normal workflow without constantly thinking about where their `.env` file is.
 
 ---
 
@@ -3907,7 +3907,7 @@ Build React dashboard
 
 STEP 14
 ↓
-Build KEKKAI CLI
+Build CLOAK-ENV CLI
 
 STEP 15
 ↓
@@ -3950,7 +3950,7 @@ Future integrations
 
 # 90. Final Reminder
 
-KEKKAI is a **security-sensitive project**.
+CLOAK-ENV is a **security-sensitive project**.
 
 The objective is not simply to make a CRUD application that stores environment variables.
 
@@ -3971,7 +3971,7 @@ Disaster Recovery
 
 The UI and CLI are only the visible part.
 
-The real engineering challenge of KEKKAI is:
+The real engineering challenge of CLOAK-ENV is:
 
 > **How can a developer store a secret in the cloud and recover/use it when needed while minimizing the number of places where the plaintext secret exists?**
 
@@ -3979,7 +3979,7 @@ That question should guide every architectural decision made during development.
 
 ---
 
-# KEKKAI
+# CLOAK-ENV
 
 ### Secure developer secrets. Anywhere you code.
 
@@ -3992,4 +3992,4 @@ run  → Execute securely
 
 **Code → GitHub**
 
-**Secrets → KEKKAI**
+**Secrets → CLOAK-ENV**

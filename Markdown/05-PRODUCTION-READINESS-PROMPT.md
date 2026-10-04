@@ -1,4 +1,4 @@
-# KEKKAI — Production Readiness Implementation Prompt
+# CLOAK-ENV — Production Readiness Implementation Prompt
 
 Paste this whole document (or hand the repo + this file) to Claude Code / your implementation agent
 as the working brief. It assumes the current state described in the "Implementation Status Report"
@@ -9,8 +9,8 @@ dashboard pages started, `init/push/pull/run` scaffolded but not wired).
 
 ## Context to give the agent
 
-> You are working on KEKKAI, a developer secret-vault platform (monorepo: `apps/api`,
-> `apps/kekkai-web`, `packages/cli`, `packages/shared`, Prisma + PostgreSQL). Read
+> You are working on CLOAK-ENV, a developer secret-vault platform (monorepo: `apps/api`,
+> `apps/cloak-env-web`, `packages/cli`, `packages/shared`, Prisma + PostgreSQL). Read
 > `00-FEASIBILITY.md`, `01-ARCHITECTURE.md`, `02-SECURITY-ENV-STORAGE.md`, `03-CLI-REFERENCE.md`,
 > and `04-FRONTEND-UX.md` in full before writing any code — they are the spec. Security decisions
 > in `02-SECURITY-ENV-STORAGE.md` are non-negotiable; if a request would conflict with them
@@ -36,11 +36,11 @@ browser).
 3. Move the CLI login flow to a device-code flow (browser approval, CLI polling) — do not let the
    CLI process ever hold or transmit a raw password, even once.
 4. Implement refresh-token rotation with reuse detection.
-5. Wire audit logging into every mutating and every secret-read code path (including `kekkai get`
-   and `kekkai pull` — plaintext access should always be traceable). Confirm no code path ever logs
+5. Wire audit logging into every mutating and every secret-read code path (including `cloak-env get`
+   and `cloak-env pull` — plaintext access should always be traceable). Confirm no code path ever logs
    a secret value or a full Authorization header (add a redacting logger middleware and a test that
    fails CI if a value-shaped string appears in log output during the test suite).
-6. Add `.gitleaks.toml` (or similar) and run secret-scanning in CI on the KEKKAI repo itself.
+6. Add `.gitleaks.toml` (or similar) and run secret-scanning in CI on the CLOAK-ENV repo itself.
 
 ## Phase 2 — Backend: finish the API surface
 
@@ -53,7 +53,7 @@ Implement per `01-ARCHITECTURE.md` §1 and the endpoint list in the original spe
 - `POST /api/sync/push`, `POST /api/sync/pull` for the CLI's bulk operations, diffed server-side so
   the CLI's `push` diff preview (see `03-CLI-REFERENCE.md`) has real data to render.
 - `GET /api/audit` with pagination and filters (by project, by user, by action type).
-- `POST /api/projects/:id/environments/:envId/clone` backing `kekkai clone`.
+- `POST /api/projects/:id/environments/:envId/clone` backing `cloak-env clone`.
 - Every route: Zod input validation, rate limiting (stricter on `/auth/*` and `/secrets/*/reveal`),
   explicit CORS allow-list (no `origin: "*"`), server-side RBAC check independent of any
   client-supplied project/role claim.
@@ -65,9 +65,9 @@ Implement per `01-ARCHITECTURE.md` §1 and the endpoint list in the original spe
 - Add: `status`, `diff`, `whoami`, `set`, `unset`, `get`, `list`, `history`, `rollback`, `env list`,
   `env create`, `env switch`, `projects`, `project switch`, `clone`, `doctor`, `scan`, `export`,
   `team invite`, `logout`, `audit` — table in `03-CLI-REFERENCE.md` has the full spec for each.
-- `kekkai doctor` should be genuinely useful, not decorative: check `.gitignore` coverage, token
+- `cloak-env doctor` should be genuinely useful, not decorative: check `.gitignore` coverage, token
   expiry, drift, and network reachability to the API, and print actionable fixes.
-- Package for `npm install -g kekkai` with a proper `bin` entry and semantic-versioned releases.
+- Package for `npm install -g cloak-env` with a proper `bin` entry and semantic-versioned releases.
 
 ## Phase 4 — Frontend: dashboard + marketing site
 
