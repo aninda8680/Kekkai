@@ -1,4 +1,4 @@
-# 🛡️ CLOAK-ENV (結界)
+# 🛡️ CLOAK-ENV
 
 > **Zero-Trust Developer Secret Vault & Environment Synchronization Engine**  
 > Plaintext secrets live exclusively in developer memory and local files. Envelope-encrypted with AES-256-GCM + Master KEK at rest and in transit.
