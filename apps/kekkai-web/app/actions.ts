@@ -14,7 +14,77 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const API_URL = process.env.API_URL || 'http://localhost:4000';
+const DEFAULT_LOCAL_URL = 'http://localhost:4000';
+const DEFAULT_DEPLOYED_URL = 'https://cloak-env.onrender.com';
+
+const LOCAL_API_URL = process.env.LOCAL_API_URL || 
+  (process.env.API_URL?.includes('localhost') || process.env.API_URL?.includes('127.0.0.1')
+    ? process.env.API_URL
+    : DEFAULT_LOCAL_URL);
+
+const DEPLOYED_API_URL = process.env.DEPLOYED_API_URL || 
+  (!process.env.API_URL?.includes('localhost') && !process.env.API_URL?.includes('127.0.0.1') && process.env.API_URL
+    ? process.env.API_URL
+    : DEFAULT_DEPLOYED_URL);
+
+let activeApiUrl: string | null = null;
+let lastCheckTime = 0;
+const HEALTH_CACHE_TTL_MS = 10_000; // 10 seconds cache
+
+/**
+ * Dynamically resolves the API base URL:
+ * If localhost (e.g. http://localhost:4000) is running and healthy, it is used.
+ * Otherwise, falls back to the deployed URL (e.g. https://cloak-env.onrender.com).
+ */
+export async function getApiUrl(): Promise<string> {
+  const now = Date.now();
+  if (activeApiUrl && now - lastCheckTime < HEALTH_CACHE_TTL_MS) {
+    return activeApiUrl;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
+    const res = await fetch(`${LOCAL_API_URL}/health`, {
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      activeApiUrl = LOCAL_API_URL;
+      lastCheckTime = now;
+      return LOCAL_API_URL;
+    }
+  } catch {
+    // Localhost not reachable
+  }
+
+  activeApiUrl = DEPLOYED_API_URL;
+  lastCheckTime = now;
+  return DEPLOYED_API_URL;
+}
+
+/**
+ * Centralized fetch helper that resolves base URL dynamically,
+ * with automatic fallback between local and deployed if a network error occurs.
+ */
+async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const baseUrl = await getApiUrl();
+  const endpoint = path.startsWith('http') ? path : `${baseUrl}${path}`;
+
+  try {
+    return await fetch(endpoint, options);
+  } catch (err) {
+    const fallbackBase = baseUrl === LOCAL_API_URL ? DEPLOYED_API_URL : LOCAL_API_URL;
+    if (fallbackBase && fallbackBase !== baseUrl && !path.startsWith('http')) {
+      activeApiUrl = fallbackBase;
+      lastCheckTime = Date.now();
+      return await fetch(`${fallbackBase}${path}`, options);
+    }
+    throw err;
+  }
+}
 
 async function getToken(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -25,7 +95,7 @@ async function apiGet(path: string) {
   const token = await getToken();
   if (!token) redirect('/login');
 
-  const res = await fetch(`${API_URL}/api${path}`, {
+  const res = await apiFetch(`/api${path}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
@@ -41,13 +111,21 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  const res = await fetch(`${API_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
+  let res: Response;
+  try {
+    res = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    return { error: 'Could not connect to authentication server' };
+  }
 
-  if (!res.ok) return { error: 'Invalid credentials' };
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    return { error: errorData?.error || 'Invalid credentials' };
+  }
 
   const data = await res.json();
   const cookieStore = await cookies();
@@ -67,24 +145,33 @@ export async function registerUser(formData: FormData) {
   const password = formData.get('password') as string;
   const confirmPassword = formData.get('confirmPassword') as string;
 
+  if (!email || !password) {
+    return { error: 'Email and password are required' };
+  }
+
   if (password !== confirmPassword) {
     return { error: 'Passwords do not match' };
   }
 
-  const res = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
+  try {
+    const res = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
-    return { error: errorData.error || 'Registration failed' };
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
+      return { error: errorData.error || 'Registration failed' };
+    }
+  } catch {
+    return { error: 'Could not connect to authentication server' };
   }
 
   // Automatically log in after registration
   return login(formData);
 }
+
 
 export async function logout() {
   const cookieStore = await cookies();
@@ -101,6 +188,26 @@ export async function getProjects() {
 
 export async function getProject(projectId: string) {
   return apiGet(`/projects/${projectId}`);
+}
+
+export async function createProject(name: string) {
+  const token = await getToken();
+  if (!token) redirect('/login');
+
+  const res = await apiFetch('/api/projects', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    return { error: data?.error || 'Failed to create project' };
+  }
+  return res.json();
 }
 
 // ─── Environments ──────────────────────────────────────────────────────────
@@ -149,7 +256,7 @@ export async function approveDeviceCode(userCode: string, password?: string) {
   const token = await getToken();
   if (!token) redirect('/login');
 
-  const res = await fetch(`${API_URL}/api/auth/device/approve`, {
+  const res = await apiFetch('/api/auth/device/approve', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -175,7 +282,7 @@ export async function revokeWebSession(sessionId: string) {
   const token = await getToken();
   if (!token) redirect('/login');
 
-  const res = await fetch(`${API_URL}/api/sessions/web/${sessionId}`, {
+  const res = await apiFetch(`/api/sessions/web/${sessionId}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -188,7 +295,7 @@ export async function revokeCliDevice(deviceId: string) {
   const token = await getToken();
   if (!token) redirect('/login');
 
-  const res = await fetch(`${API_URL}/api/sessions/cli/${deviceId}`, {
+  const res = await apiFetch(`/api/sessions/cli/${deviceId}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -207,7 +314,7 @@ export async function createServiceToken(projectId: string, name: string, enviro
   const token = await getToken();
   if (!token) redirect('/login');
 
-  const res = await fetch(`${API_URL}/api/projects/${projectId}/tokens`, {
+  const res = await apiFetch(`/api/projects/${projectId}/tokens`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -227,7 +334,7 @@ export async function revokeServiceToken(projectId: string, tokenId: string) {
   const token = await getToken();
   if (!token) redirect('/login');
 
-  const res = await fetch(`${API_URL}/api/projects/${projectId}/tokens/${tokenId}`, {
+  const res = await apiFetch(`/api/projects/${projectId}/tokens/${tokenId}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

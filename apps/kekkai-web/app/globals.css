@@ -1,72 +1,153 @@
 @import "tailwindcss";
 
-:root {
-  --background: #080808;
-  --foreground: #f5f5f5;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+@theme {
+  /* Fonts */
   --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono), 'Fira Code', 'Cascadia Code', monospace;
+  --font-display: var(--font-outfit), var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  
+  /* Colors */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-elevated: var(--bg-elevated);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-border-primary: var(--border-primary);
+  
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-bright: var(--brand-bright);
+  --color-brand-soft: var(--brand-soft);
+  
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-orange: var(--accent-orange);
+}
+
+:root {
+  /* LIGHT THEME */
+  --bg-primary: #F5F5F0;
+  --bg-surface: #FFFFFF;
+  --bg-secondary: #EEF0E9;
+  --bg-elevated: #FFFFFF;
+  
+  --text-primary: #10130F;
+  --text-secondary: #626860;
+  --text-muted: #858B83;
+  
+  --border-primary: #D7DBD3;
+  
+  --brand-primary: #2E7547;
+  --brand-dark: #173B29;
+  --brand-bright: #4D9B63;
+  --brand-soft: #DCEBDD;
+  
+  --accent-yellow: #E7D87C;
+  --accent-orange: #D98955;
+}
+
+@media (prefers-color-scheme: dark) {
+  .system-theme {
+    /* DARK THEME */
+    --bg-primary: #090B0A;
+    --bg-surface: #101410;
+    --bg-secondary: #151A16;
+    --bg-elevated: #151A16;
+    
+    --text-primary: #F0F1E9;
+    --text-secondary: #9AA19A;
+    --text-muted: #626860;
+    
+    --border-primary: #293029;
+    
+    --brand-primary: #76C58B;
+    --brand-dark: #173B29;
+    --brand-bright: #4D9B63;
+    --brand-soft: #1D3827;
+    
+    --accent-yellow: #E7D87C;
+    --accent-orange: #D98955;
+  }
+}
+
+.dark {
+  /* DARK THEME */
+  --bg-primary: #090B0A;
+  --bg-surface: #101410;
+  --bg-secondary: #151A16;
+  --bg-elevated: #151A16;
+  
+  --text-primary: #F0F1E9;
+  --text-secondary: #9AA19A;
+  --text-muted: #626860;
+  
+  --border-primary: #293029;
+  
+  --brand-primary: #76C58B;
+  --brand-dark: #173B29;
+  --brand-bright: #4D9B63;
+  --brand-soft: #1D3827;
+  
+  --accent-yellow: #E7D87C;
+  --accent-orange: #D98955;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Masked value — animated dots ─────────────────────────────────────────
- * Hover causes a subtle shimmer across the dots (~200ms), signaling
- * "this is intentionally hidden" rather than feeling like a missing feature.
- * prefers-reduced-motion: animation disabled.
- * See 04-FRONTEND-UX.md §5 micro-interactions.
- */
-.masked-value {
-  display: inline-block;
-  letter-spacing: 0.15em;
-  transition: opacity 0.2s ease, color 0.2s ease;
+::selection {
+  background-color: var(--brand-soft);
+  color: var(--brand-dark);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .masked-value:hover {
-    animation: maskedShimmer 0.3s ease-out forwards;
-  }
-
-  @keyframes maskedShimmer {
-    0%   { opacity: 1; letter-spacing: 0.15em; }
-    40%  { opacity: 0.4; letter-spacing: 0.22em; color: #6366f1; }
-    100% { opacity: 1; letter-spacing: 0.15em; color: #6b7280; }
-  }
+.dark ::selection {
+  background-color: var(--brand-dark);
+  color: var(--brand-primary);
 }
 
-/* ── Copy CLI button client-side interaction ──────────────────────────────
- * Handled via a small inline script (no React state needed for a
- * static copy button). Defined in global CSS for visibility.
- */
-.copy-cli-btn.copied {
-  color: #34d399;
-  border-color: rgba(52, 211, 153, 0.3);
-  background: rgba(52, 211, 153, 0.08);
+/* ── Custom Utilities ───────────────────────────────────────── */
+
+.border-brutal {
+  border: 1px solid var(--border-primary);
+}
+
+.shadow-brutal {
+  box-shadow: 4px 4px 0px 0px var(--brand-dark);
+}
+
+.dark .shadow-brutal {
+  box-shadow: 4px 4px 0px 0px var(--brand-primary);
+}
+
+.pixel-corners {
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0, 
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
 }
 
 /* ── Scrollbar ────────────────────────────────────────────────────────────*/
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
-/* ── Focus visible — accessibility ───────────────────────────────────────*/
+/* ── Focus visible ───────────────────────────────────────*/
 :focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
-/* ── Reduce motion — respect user preference ──────────────────────────────*/
+/* ── Reduce motion ──────────────────────────────*/
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

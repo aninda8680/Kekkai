@@ -17,16 +17,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const projects = await getProjects();
   
   return (
-    <div className="min-h-screen bg-[#080808] text-white flex font-sans">
+    <div className="system-theme min-h-screen bg-bg-primary text-text-primary flex font-sans">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/8 bg-black/60 hidden md:flex flex-col shrink-0 backdrop-blur-xl">
+      <aside className="w-64 border-r border-border-primary bg-bg-surface hidden md:flex flex-col shrink-0">
         {/* Logo */}
-        <div className="p-6 border-b border-white/8">
+        <div className="p-6 border-b border-border-primary">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_12px_rgba(99,102,241,0.4)]">
-              <span className="font-bold text-white text-sm">K</span>
+            <div className="w-8 h-8 rounded-none border border-text-primary bg-gradient-to-br from-brand-primary to-brand-dark flex items-center justify-center shadow-brutal pixel-corners">
+              <span className="font-bold text-white text-sm font-mono">K</span>
             </div>
-            <span className="font-semibold tracking-wide text-white/90 group-hover:text-white transition-colors">CLOAK-ENV</span>
+            <span className="font-semibold tracking-wide text-text-primary group-hover:text-brand-primary transition-colors font-mono uppercase">CLOAK-ENV</span>
           </Link>
         </div>
 
@@ -39,32 +39,30 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </nav>
 
         {/* Security callout */}
-        <div className="mx-3 mb-3 p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-          <p className="text-xs text-indigo-300 leading-relaxed">
-            <span className="font-semibold">No plaintext in browser.</span>{" "}
+        <div className="mx-3 mb-3 p-3 rounded-none bg-brand-soft border border-brand-primary pixel-corners">
+          <p className="text-xs text-brand-dark leading-relaxed font-mono">
             Use the CLI to access secret values.
           </p>
-          <code className="mt-2 block text-xs text-indigo-400 font-mono bg-black/40 rounded px-2 py-1">
+          <code className="mt-2 block text-[10px] text-brand-dark font-mono bg-bg-primary border border-border-primary rounded-none px-2 py-1">
             cloak-env get KEY_NAME
           </code>
         </div>
 
         {/* User footer */}
-        <div className="p-3 border-t border-white/8">
+        <div className="p-3 border-t border-border-primary">
           <form action={logout}>
             <button
               type="submit"
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/8 border border-white/8 transition-colors text-left group"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-none bg-bg-elevated hover:bg-bg-primary border border-border-primary transition-colors text-left group pixel-corners"
               id="logout-button"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-semibold shrink-0">
-                U
+              <div className="w-8 h-8 rounded-none border border-border-primary bg-bg-surface flex items-center justify-center text-sm font-semibold shrink-0 font-mono text-text-primary">
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">Account</p>
-                <p className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">Sign out</p>
+                <p className="text-sm font-medium text-text-primary truncate">Account</p>
+                <p className="text-xs text-text-secondary group-hover:text-text-primary transition-colors">Sign out</p>
               </div>
-              <svg className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-text-secondary group-hover:text-text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
@@ -74,8 +72,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Main */}
       <main className="flex-1 overflow-auto relative">
-        <div className="absolute top-0 left-0 w-full h-64 bg-indigo-500/3 blur-[120px] pointer-events-none" />
-        <div className="p-8 relative z-10">
+        <div className="p-8 relative z-10 w-full h-full">
           {children}
         </div>
       </main>
@@ -88,13 +85,13 @@ function NavItem({ href, icon, label, active }: { href: string; icon: React.Reac
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+      className={`flex items-center gap-3 px-3 py-2 rounded-none text-sm font-medium transition-all font-mono ${
         active
-          ? "bg-white/10 text-white"
-          : "text-gray-400 hover:bg-white/5 hover:text-white"
+          ? "bg-bg-elevated text-brand-primary border-l-2 border-brand-primary"
+          : "text-text-secondary hover:bg-bg-elevated hover:text-text-primary border-l-2 border-transparent"
       }`}
     >
-      <span className={active ? "text-indigo-400" : "text-gray-500"}>{icon}</span>
+      <span className={active ? "text-brand-primary" : "text-text-secondary"}>{icon}</span>
       {label}
     </Link>
   );

@@ -1,130 +1,154 @@
-import Link from "next/link";
 import React from "react";
+import Link from "next/link";
+import { HeroTerminal } from "@/components/marketing/HeroTerminal";
+
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-indigo-500/30">
-      {/* Background Effects */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-[25%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/20 blur-[120px] pointer-events-none" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-purple-500/10 blur-[150px] pointer-events-none" />
-      </div>
+    <div className="min-h-screen bg-bg-primary text-text-primary selection:bg-brand-soft selection:text-brand-dark overflow-x-hidden font-sans">
+      
+      {/* 6. NAVBAR */}
+      <header className="w-full bg-bg-surface/80 backdrop-blur-md sticky top-0 z-50 border-b border-border-primary transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-6 h-14 md:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 bg-brand-primary pixel-corners"></div>
+            <span className="font-display font-bold text-lg tracking-tight uppercase">Cloak-Env</span>
+          </div>
+          
+          <nav className="hidden md:flex items-center gap-8 font-mono text-sm font-medium">
+            <Link href="#product" className="text-text-secondary hover:text-text-primary transition-colors">Product</Link>
+            <Link href="#security" className="text-text-secondary hover:text-text-primary transition-colors">Security</Link>
+            <Link href="#cli" className="text-text-secondary hover:text-text-primary transition-colors">CLI</Link>
+            <Link href="/docs" className="text-text-secondary hover:text-text-primary transition-colors">Docs</Link>
+          </nav>
 
-      <main className="relative z-10">
-        {/* Navigation */}
-        <nav className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto border-b border-white/5">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-              <span className="font-bold text-lg tracking-tighter text-white">K</span>
-            </div>
-            <span className="font-semibold text-xl tracking-wide">CLOAK-ENV</span>
-          </div>
-          <div className="flex items-center gap-6 text-sm font-medium text-gray-300">
-            <Link href="#features" className="hover:text-white transition-colors">Features</Link>
-            <Link href="#security" className="hover:text-white transition-colors">Security</Link>
-            <Link href="#docs" className="hover:text-white transition-colors">Documentation</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-              Sign In
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="https://github.com/aninda8680/Kekkai" target="_blank" rel="noopener" className="text-text-secondary hover:text-text-primary transition-colors">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
             </Link>
-            <Link 
-              href="/dashboard" 
-              className="text-sm font-medium bg-white text-black px-4 py-2 rounded-full hover:bg-gray-100 transition-all hover:scale-105 active:scale-95"
-            >
+            <Link href="/login" className="font-mono text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Log in</Link>
+            <Link href="/dashboard" className="font-mono text-sm bg-text-primary text-bg-primary px-4 py-2 pixel-corners hover:bg-brand-primary hover:text-white transition-colors shadow-sm">
               Get Started
             </Link>
           </div>
-        </nav>
-
-        {/* Hero Section */}
-        <section className="px-8 pt-32 pb-20 max-w-7xl mx-auto flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm text-indigo-300 mb-8 backdrop-blur-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-            </span>
-            CloakEnv v1.0 is now live
-          </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 max-w-4xl bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60">
-            The Secure Vault for Modern Developers
-          </h1>
-          
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mb-10 leading-relaxed">
-            Protect your API keys, environment variables, and infrastructure secrets with military-grade encryption. Built for speed, designed for security.
-          </p>
-          
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/dashboard" 
-              className="px-8 py-4 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_-5px_rgba(79,70,229,0.5)]"
-            >
-              Start for free
-            </Link>
-            <button className="px-8 py-4 rounded-full bg-white/5 hover:bg-white/10 text-white font-medium transition-all border border-white/10 backdrop-blur-sm">
-              Read Documentation
-            </button>
-          </div>
-        </section>
+          <button className="md:hidden text-text-primary">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+        </div>
+      </header>
 
-        {/* Bento Grid Features */}
-        <section className="px-8 py-20 max-w-7xl mx-auto" id="features">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-1 md:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm hover:bg-white/[0.07] transition-colors relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] group-hover:bg-indigo-500/20 transition-colors" />
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-6 border border-indigo-500/30">
-                <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+      <main>
+        {/* 7. HERO — FIRST SCREEN */}
+        <section className="relative px-6 py-20 md:py-32 max-w-7xl mx-auto overflow-hidden">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            
+            <div className="w-full lg:w-[55%] flex flex-col items-start z-10">
+              <div className="font-mono text-xs font-bold text-brand-dark bg-brand-soft uppercase tracking-widest mb-8 border border-brand-primary/20 px-3 py-1 inline-flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-brand-primary"></span>
+                CLOAK-ENV / DEVELOPER SECURITY
               </div>
-              <h3 className="text-2xl font-semibold mb-3">End-to-End Encryption</h3>
-              <p className="text-gray-400 leading-relaxed max-w-md">
-                Your secrets are encrypted before they ever leave your machine. Zero-knowledge architecture ensures that even we can&apos;t read your data.
+              
+              <h1 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-8 text-text-primary uppercase leading-[0.85] text-balance">
+                COMING SOON
+              </h1>
+              
+              <p className="text-lg md:text-xl text-text-secondary max-w-xl mb-12 font-sans leading-relaxed">
+                A zero-trust secret and environment management platform. 
+                Synchronize across your team and inject directly into runtime. 
+                Stop shipping your <code className="font-mono bg-bg-secondary px-1 py-0.5 text-text-primary">.env</code> file.
               </p>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                <div className="w-full sm:w-auto font-mono text-sm font-bold bg-text-primary text-bg-primary px-8 py-4 shadow-brutal border-brutal opacity-50 cursor-not-allowed">
+                  Coming Soon
+                </div>
+              </div>
+              
+              <div className="mt-8 flex gap-6 font-mono text-xs text-text-muted uppercase tracking-wider">
+                <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg> CLI-FIRST</span>
+                <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg> ZERO-TRUST</span>
+                <span className="flex items-center gap-1.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"></polyline></svg> OPEN SOURCE</span>
+              </div>
             </div>
 
-            <div className="col-span-1 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm hover:bg-white/[0.07] transition-colors group">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-6 border border-purple-500/30">
-                <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+            <div className="w-full lg:w-[45%] relative z-10">
+              <div className="relative border-brutal bg-bg-surface shadow-brutal overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-8 bg-bg-secondary border-b border-border-primary flex items-center px-4 gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+                </div>
+                <div className="pt-8 w-full h-full">
+                  <HeroTerminal />
+                </div>
               </div>
-              <h3 className="text-2xl font-semibold mb-3">Lightning Fast</h3>
-              <p className="text-gray-400 leading-relaxed">
-                Global edge network ensures sub-50ms latency for secret injection in your CI/CD pipelines.
-              </p>
+              
+              {/* 9. HERO PIXEL ART / ACCENTS */}
+              <div className="absolute -top-12 -right-8 w-24 h-24 bg-brand-soft/50 -z-10 pixel-corners border border-brand-primary/20"></div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-accent-yellow/20 -z-10 pixel-corners border border-accent-yellow/50"></div>
             </div>
-
-            <div className="col-span-1 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm hover:bg-white/[0.07] transition-colors group">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-6 border border-emerald-500/30">
-                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold mb-3">RBAC Built-in</h3>
-              <p className="text-gray-400 leading-relaxed">
-                Granular access controls for your entire team. Revoke access instantly with a single click.
-              </p>
-            </div>
-
-            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-white/10 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group">
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mb-6 border border-white/20">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold mb-3">CLI First Developer Experience</h3>
-              <p className="text-gray-300 leading-relaxed max-w-md">
-                Inject secrets directly into your local development environment without ever touching a .env file again. 
-                <code className="block mt-4 p-3 bg-black/50 rounded-lg text-sm text-indigo-300 border border-white/10 font-mono">
-                  $ npx cloak-env run -- npm run dev
-                </code>
-              </p>
-            </div>
+            
           </div>
         </section>
       </main>
+
+      {/* 36. FOOTER */}
+      <footer className="border-t border-border-primary bg-bg-surface py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-6 h-6 bg-brand-dark pixel-corners"></div>
+                <span className="font-display font-bold text-xl tracking-tight uppercase">Cloak-Env</span>
+              </div>
+              <p className="text-sm font-sans text-text-secondary max-w-xs">
+                Secure environment management for developers.
+                Zero-trust, CLI-first, professional grade.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-mono font-bold text-sm uppercase mb-6 tracking-widest">Product</h4>
+              <ul className="space-y-4 font-sans text-sm text-text-secondary">
+                <li><Link href="#security" className="hover:text-brand-primary transition-colors">Security</Link></li>
+                <li><Link href="#cli" className="hover:text-brand-primary transition-colors">CLI Workflow</Link></li>
+                <li><Link href="/dashboard" className="hover:text-brand-primary transition-colors">Dashboard</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-mono font-bold text-sm uppercase mb-6 tracking-widest">Resources</h4>
+              <ul className="space-y-4 font-sans text-sm text-text-secondary">
+                <li><Link href="/docs" className="hover:text-brand-primary transition-colors">Documentation</Link></li>
+                <li><Link href="https://github.com/aninda8680/Kekkai" className="hover:text-brand-primary transition-colors">GitHub</Link></li>
+                <li><Link href="/api" className="hover:text-brand-primary transition-colors">API Reference</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-mono font-bold text-sm uppercase mb-6 tracking-widest">Company</h4>
+              <ul className="space-y-4 font-sans text-sm text-text-secondary">
+                <li><Link href="/about" className="hover:text-brand-primary transition-colors">About</Link></li>
+                <li><Link href="/contact" className="hover:text-brand-primary transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-border-primary pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="font-mono text-xs text-text-secondary flex items-center gap-2">
+              <div className="w-2 h-2 bg-text-muted pixel-corners"></div>
+              © {new Date().getFullYear()} CLOAK-ENV
+            </div>
+            <div className="flex gap-6 font-mono text-xs">
+              <Link href="/privacy" className="text-text-secondary hover:text-text-primary">Privacy</Link>
+              <Link href="/terms" className="text-text-secondary hover:text-text-primary">Terms</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
