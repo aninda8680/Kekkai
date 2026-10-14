@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { approveDeviceCode } from '@/app/actions';
@@ -10,6 +11,7 @@ function DeviceLoginForm() {
 
   const [userCode, setUserCode] = useState(prefilled);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -44,130 +46,145 @@ function DeviceLoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo / Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-cyan-400 rounded-md flex items-center justify-center">
-              <span className="text-black font-bold text-sm">K</span>
-            </div>
-            <span className="text-white font-semibold text-lg tracking-tight">CLOAK-ENV</span>
-          </div>
-          <h1 className="text-2xl font-semibold text-white tracking-tight">Connect CLOAK-ENV CLI</h1>
-          <p className="text-neutral-400 text-sm mt-2">
-            Enter the code shown in your terminal to securely connect your device.
-          </p>
-        </div>
+    <div className="min-h-screen bg-bg-primary text-text-primary font-sans flex flex-col items-center justify-center p-6 relative overflow-hidden selection:bg-brand-soft selection:text-brand-dark">
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center p-6 relative overflow-hidden w-full">
+        {/* Pixel Art Accents */}
+        <div className="absolute top-1/4 -right-12 w-48 h-48 bg-brand-soft/40 -z-10 pixel-corners border border-brand-primary/20 pointer-events-none hidden sm:block" />
+        <div className="absolute bottom-1/4 -left-12 w-48 h-48 bg-accent-yellow/20 -z-10 pixel-corners border border-accent-yellow/40 pointer-events-none hidden sm:block" />
 
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl relative overflow-hidden">
-          {/* Top accent line */}
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-60" />
-
-          <div className="p-8">
-            {success ? (
-              <div className="text-center py-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 mb-4">
-                  <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h2 className="text-xl font-semibold text-white mb-2">Authentication Successful</h2>
-                {approvedAccount && (
-                  <p className="text-neutral-400 text-sm mb-1">
-                    Logged in as <span className="text-cyan-400 font-medium">{approvedAccount}</span>
-                  </p>
-                )}
-                <p className="text-neutral-500 text-sm mt-3">
-                  You can now close this window and return to your terminal.
-                </p>
-                <p className="text-neutral-600 text-xs mt-4">Redirecting to dashboard...</p>
+        <div className="w-full max-w-md relative z-10">
+          <div className="border-brutal bg-bg-surface shadow-brutal overflow-hidden">
+            {/* Window Title Bar */}
+            <div className="h-9 bg-bg-secondary border-b border-border-primary flex items-center justify-between px-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-border-primary" />
+                <div className="w-2.5 h-2.5 rounded-full bg-border-primary" />
+                <div className="w-2.5 h-2.5 rounded-full bg-border-primary" />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Device Code Input */}
-                <div>
-                  <label htmlFor="userCode" className="block text-sm font-medium text-neutral-300 mb-2">
-                    One-time code
-                  </label>
-                  <input
-                    id="userCode"
-                    type="text"
-                    placeholder="XXXX-XXXX"
-                    value={userCode}
-                    onChange={(e) => setUserCode(formatCode(e.target.value))}
-                    className="w-full bg-neutral-950 border border-neutral-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 font-mono text-center tracking-[0.3em] text-lg uppercase transition-all placeholder:text-neutral-600"
-                    autoComplete="off"
-                    maxLength={9}
-                    required
-                  />
-                  <p className="text-xs text-neutral-600 mt-1.5 text-center">
-                    Copy this from your terminal where you ran{' '}
-                    <code className="font-mono text-neutral-500">cloak-env auth login</code>
-                  </p>
-                </div>
+              <span className="font-mono text-[11px] text-text-muted uppercase tracking-wider">
+                auth // device-connect
+              </span>
+            </div>
 
-                {/* Divider */}
-                <div className="border-t border-neutral-800" />
-
-                {/* Step-up Password */}
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-neutral-300 mb-2">
-                    Confirm your password{' '}
-                    <span className="text-neutral-500 font-normal">(step-up security)</span>
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your CLOAK-ENV password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all placeholder:text-neutral-600"
-                    required
-                  />
-                  <p className="text-xs text-neutral-600 mt-1.5">
-                    Re-entering your password ensures only you can authorize this session.
-                  </p>
-                </div>
-
-                {/* Error */}
-                {error && (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-2">
-                    <svg className="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            {/* Form Body */}
+            <div className="p-8 md:p-10">
+              {success ? (
+                <div className="text-center py-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-soft border border-brand-primary/30 mb-4 pixel-corners">
+                    <svg className="w-8 h-8 text-brand-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <p className="text-sm text-red-400">{error}</p>
                   </div>
-                )}
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading || userCode.length < 9 || !password}
-                  className="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-neutral-100 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Authorizing...
-                    </>
-                  ) : (
-                    'Authorize CLI'
+                  <h2 className="text-2xl font-display font-extrabold uppercase text-text-primary mb-2">
+                    CLI Connected
+                  </h2>
+                  {approvedAccount && (
+                    <p className="text-text-secondary text-sm font-mono mb-2">
+                      Authorized for <span className="text-brand-primary font-bold">{approvedAccount}</span>
+                    </p>
                   )}
-                </button>
-              </form>
-            )}
+                  <p className="text-text-secondary text-xs font-mono leading-relaxed mt-4">
+                    You can now return to your terminal. Redirecting to dashboard...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-6">
+                    <div className="font-mono text-xs font-bold text-brand-dark bg-brand-soft uppercase tracking-widest mb-3 border border-brand-primary/20 px-2.5 py-1 inline-flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-brand-primary" />
+                      DEVICE AUTHORIZATION
+                    </div>
+                    <h1 className="text-3xl font-display font-extrabold uppercase tracking-tight text-text-primary mb-2">
+                      Connect CLI
+                    </h1>
+                    <p className="text-text-secondary text-sm leading-relaxed">
+                      Enter the one-time code generated by your terminal to link your machine.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Device Code Input */}
+                    <div className="space-y-1.5">
+                      <label htmlFor="userCode" className="block font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
+                        One-Time Code
+                      </label>
+                      <input
+                        id="userCode"
+                        type="text"
+                        placeholder="XXXX-XXXX"
+                        value={userCode}
+                        onChange={(e) => setUserCode(formatCode(e.target.value))}
+                        className="w-full bg-bg-primary border border-border-primary px-4 py-3 text-text-primary rounded-none focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary font-mono text-center tracking-[0.3em] text-lg uppercase transition-all placeholder:text-text-muted"
+                        autoComplete="off"
+                        maxLength={9}
+                        required
+                      />
+                      <p className="text-[11px] text-text-muted font-mono text-center mt-1">
+                        Shown in your terminal after running <code className="text-brand-primary">cloak-env auth login</code>
+                      </p>
+                    </div>
+
+                    {/* Step-up Password */}
+                    <div className="space-y-1.5 pt-2 border-t border-border-primary">
+                      <label htmlFor="password" className="block font-mono text-xs font-bold uppercase tracking-wider text-text-secondary">
+                        Confirm Password <span className="text-text-muted font-normal">(step-up)</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Your account password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full bg-bg-primary border border-border-primary pl-4 pr-11 py-3 text-text-primary rounded-none focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary font-mono text-sm transition-all placeholder:text-text-muted"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary focus:outline-none transition-colors p-1"
+                        >
+                          {showPassword ? (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Error */}
+                    {error && (
+                      <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-mono p-3 border-l-4 border-l-red-500 flex items-center gap-2">
+                        <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>{error}</span>
+                      </div>
+                    )}
+
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={loading || userCode.length < 9 || !password}
+                      className="w-full bg-text-primary text-bg-primary hover:bg-brand-primary hover:text-white font-mono text-sm font-bold uppercase py-3.5 px-6 border-brutal shadow-brutal active:translate-y-0.5 active:shadow-none transition-all pixel-corners disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 mt-6"
+                    >
+                      {loading ? 'Authorizing CLI...' : 'Authorize CLI Device →'}
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Security note */}
-        <p className="text-center text-xs text-neutral-600 mt-5">
-          Never share your one-time code. CLOAK-ENV will never ask for your token in an email.
-        </p>
-      </div>
+      </main>
     </div>
   );
 }
@@ -176,8 +193,8 @@ export default function LoginDevicePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-neutral-950 flex flex-col justify-center items-center p-4">
-          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen bg-bg-primary flex flex-col justify-center items-center p-4">
+          <div className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-none animate-spin" />
         </div>
       }
     >

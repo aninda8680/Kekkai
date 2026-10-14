@@ -37,7 +37,7 @@ export function SessionsClient({
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-5 md:space-y-6">
       <TypedConfirmationModal
         isOpen={!!revokeTarget}
         title={`Revoke ${revokeTarget?.type === 'web' ? 'Web Session' : 'CLI Device'}`}
@@ -49,37 +49,53 @@ export function SessionsClient({
       />
 
       {/* CLI Devices */}
-      <div>
-        <h2 className="text-xl font-semibold text-white mb-4">Authorized CLI Devices</h2>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base md:text-lg font-display font-extrabold uppercase tracking-tight text-text-primary">
+            Authorized CLI Devices
+          </h2>
+          <span className="font-mono text-xs text-text-secondary">
+            {cliDevices.length} devices
+          </span>
+        </div>
+
+        <div className="border-brutal bg-bg-surface shadow-brutal pixel-corners overflow-hidden">
+          {/* 3-dot window bar */}
+          <div className="h-8 bg-bg-secondary border-b border-border-primary flex items-center px-4 gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+            <span className="text-[11px] font-mono text-text-muted ml-2">devices // authorized-cli</span>
+          </div>
+
           <table className="w-full text-left text-sm">
-            <thead className="bg-neutral-950 border-b border-neutral-800 text-neutral-400">
+            <thead className="bg-bg-secondary border-b border-border-primary text-text-secondary font-mono uppercase text-xs">
               <tr>
-                <th className="px-6 py-4 font-medium">Device Name</th>
-                <th className="px-6 py-4 font-medium">IP Address</th>
-                <th className="px-6 py-4 font-medium">Last Used</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold">Device Name</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold">IP Address</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold">Last Used</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800">
+            <tbody className="divide-y divide-border-primary text-text-primary">
               {cliDevices.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-neutral-500">
-                    No active CLI devices. Use <code className="bg-neutral-800 px-1 py-0.5 rounded text-xs text-neutral-300">cloak-env login</code> to authorize a device.
+                  <td colSpan={4} className="px-4 md:px-6 py-6 text-center text-text-secondary font-mono text-xs">
+                    No active CLI devices. Use <code className="bg-bg-secondary border border-border-primary px-1.5 py-0.5 font-mono text-text-primary">cloak-env login</code> to authorize a device.
                   </td>
                 </tr>
               ) : (
                 cliDevices.map((device) => (
-                  <tr key={device.id} className="text-neutral-300">
-                    <td className="px-6 py-4 font-medium text-white">{device.name}</td>
-                    <td className="px-6 py-4 font-mono text-xs">{device.lastIp || 'unknown'}</td>
-                    <td className="px-6 py-4">
+                  <tr key={device.id} className="hover:bg-bg-secondary/40 transition-colors">
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 font-mono font-bold text-xs text-text-primary">{device.name}</td>
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 font-mono text-xs text-text-secondary">{device.lastIp || 'unknown'}</td>
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 font-mono text-xs text-text-secondary">
                       {new Date(device.lastUsedAt).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 text-right">
                       <button
                         onClick={() => setRevokeTarget({ id: device.id, type: 'cli', name: device.name })}
-                        className="text-red-400 hover:text-red-300 font-medium transition-colors"
+                        className="font-mono text-xs font-bold uppercase text-accent-red hover:underline cursor-pointer"
                       >
                         Revoke
                       </button>
@@ -93,39 +109,55 @@ export function SessionsClient({
       </div>
 
       {/* Web Sessions */}
-      <div>
-        <h2 className="text-xl font-semibold text-white mb-4">Active Web Sessions</h2>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base md:text-lg font-display font-extrabold uppercase tracking-tight text-text-primary">
+            Active Web Sessions
+          </h2>
+          <span className="font-mono text-xs text-text-secondary">
+            {webSessions.length} sessions
+          </span>
+        </div>
+
+        <div className="border-brutal bg-bg-surface shadow-brutal pixel-corners overflow-hidden">
+          {/* 3-dot window bar */}
+          <div className="h-8 bg-bg-secondary border-b border-border-primary flex items-center px-4 gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-border-primary"></div>
+            <span className="text-[11px] font-mono text-text-muted ml-2">sessions // browser</span>
+          </div>
+
           <table className="w-full text-left text-sm">
-            <thead className="bg-neutral-950 border-b border-neutral-800 text-neutral-400">
+            <thead className="bg-bg-secondary border-b border-border-primary text-text-secondary font-mono uppercase text-xs">
               <tr>
-                <th className="px-6 py-4 font-medium">Device / Browser</th>
-                <th className="px-6 py-4 font-medium">IP Address</th>
-                <th className="px-6 py-4 font-medium">Started At</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold">Browser / Device</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold">IP Address</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold">Started At</th>
+                <th className="px-4 md:px-6 py-2.5 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800">
+            <tbody className="divide-y divide-border-primary text-text-primary">
               {webSessions.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-neutral-500">
-                    No active web sessions (which is impossible since you&apos;re viewing this).
+                  <td colSpan={4} className="px-4 md:px-6 py-6 text-center text-text-secondary font-mono text-xs">
+                    No active web sessions.
                   </td>
                 </tr>
               ) : (
                 webSessions.map((session) => (
-                  <tr key={session.id} className="text-neutral-300">
-                    <td className="px-6 py-4 truncate max-w-[200px]" title={session.userAgent || 'unknown'}>
+                  <tr key={session.id} className="hover:bg-bg-secondary/40 transition-colors">
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 truncate max-w-[200px] font-mono text-xs text-text-primary" title={session.userAgent || 'unknown'}>
                       {session.userAgent || 'unknown device'}
                     </td>
-                    <td className="px-6 py-4 font-mono text-xs">{session.ipAddress || 'unknown'}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 font-mono text-xs text-text-secondary">{session.ipAddress || 'unknown'}</td>
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 font-mono text-xs text-text-secondary">
                       {new Date(session.createdAt).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 md:px-6 py-2.5 md:py-3 text-right">
                       <button
                         onClick={() => setRevokeTarget({ id: session.id, type: 'web', name: session.ipAddress || session.id })}
-                        className="text-red-400 hover:text-red-300 font-medium transition-colors"
+                        className="font-mono text-xs font-bold uppercase text-accent-red hover:underline cursor-pointer"
                       >
                         Revoke
                       </button>

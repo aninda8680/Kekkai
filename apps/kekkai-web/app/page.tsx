@@ -15,28 +15,25 @@ export default function Home() {
             <span className="font-display font-bold text-lg tracking-tight uppercase">Cloak-Env</span>
           </div>
           
-          <nav className="hidden md:flex items-center gap-8 font-mono text-sm font-medium">
+          {/* Page links commented out while coming soon */}
+          {/* <nav className="hidden md:flex items-center gap-8 font-mono text-sm font-medium">
             <Link href="#product" className="text-text-secondary hover:text-text-primary transition-colors">Product</Link>
             <Link href="#security" className="text-text-secondary hover:text-text-primary transition-colors">Security</Link>
             <Link href="#cli" className="text-text-secondary hover:text-text-primary transition-colors">CLI</Link>
             <Link href="/docs" className="text-text-secondary hover:text-text-primary transition-colors">Docs</Link>
-          </nav>
+          </nav> */}
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <Link href="https://github.com/aninda8680/Kekkai" target="_blank" rel="noopener" className="text-text-secondary hover:text-text-primary transition-colors">
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
               </svg>
             </Link>
             <Link href="/login" className="font-mono text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Log in</Link>
-            <Link href="/dashboard" className="font-mono text-sm bg-text-primary text-bg-primary px-4 py-2 pixel-corners hover:bg-brand-primary hover:text-white transition-colors shadow-sm">
+            <Link href="/dashboard" className="font-mono text-sm bg-text-primary text-bg-primary px-3 sm:px-4 py-2 pixel-corners hover:bg-brand-primary hover:text-white transition-colors shadow-sm">
               Get Started
             </Link>
           </div>
-          
-          <button className="md:hidden text-text-primary">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-          </button>
         </div>
       </header>
 

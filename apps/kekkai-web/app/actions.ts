@@ -141,12 +141,17 @@ export async function login(formData: FormData) {
 }
 
 export async function registerUser(formData: FormData) {
-  const email = formData.get('email') as string;
+  const username = (formData.get('username') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim();
   const password = formData.get('password') as string;
   const confirmPassword = formData.get('confirmPassword') as string;
 
   if (!email || !password) {
     return { error: 'Email and password are required' };
+  }
+
+  if (!username) {
+    return { error: 'Username is required' };
   }
 
   if (password !== confirmPassword) {
@@ -157,7 +162,7 @@ export async function registerUser(formData: FormData) {
     const res = await apiFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, username, password }),
     });
 
     if (!res.ok) {

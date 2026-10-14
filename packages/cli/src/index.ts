@@ -59,11 +59,13 @@ interface GlobalConfig {
   user?: {
     id: string;
     email: string;
+    username?: string;
   };
   accessToken?: string;
   refreshToken?: string;
   expiresAt?: number;      // ms timestamp for auth status without network call
   email?: string;          // DEPRECATED — kept for backward compat (use user.email)
+  username?: string;
 }
 
 interface LocalConfig {
@@ -380,6 +382,7 @@ async function runAuthLogin(opts: {
       // ── Step 4: Fetch user info ──
       pollSpinner.text = 'Fetching account info...';
       let userEmail = '';
+      let username = '';
       let userId = '';
       try {
         const meRes = await fetch(`${apiUrl}/api/auth/me`, {
@@ -388,6 +391,7 @@ async function runAuthLogin(opts: {
         if (meRes.ok) {
           const me = await meRes.json();
           userEmail = me.email || '';
+          username  = me.username || '';
           userId    = me.id    || '';
         }
       } catch { /* non-fatal */ }
@@ -398,14 +402,16 @@ async function runAuthLogin(opts: {
       config.accessToken  = accessToken;
       config.refreshToken = refreshToken;
       config.expiresAt    = Date.now() + tokenExpiresIn * 1000;
-      if (userEmail) config.user = { id: userId, email: userEmail };
+      if (userEmail || username) config.user = { id: userId, email: userEmail, username };
+      if (username) config.username = username;
       if (userEmail) config.email = userEmail;  // legacy compat
       if (config.apiUrl && config.host) delete config.apiUrl;  // migrate legacy field
       saveGlobalConfig(config);
 
       pollSpinner.succeed(chalk.green('✓ Authentication successful.'));
       console.log('');
-      if (userEmail) console.log(`Logged in as ${chalk.bold(userEmail)}`);
+      const displayName = username || userEmail;
+      if (displayName) console.log(`Logged in as ${chalk.bold(displayName)}`);
       return;
     }
 
@@ -436,7 +442,8 @@ authCmd
 authCmd
   .command('status')
   .description('Show current authentication state')
-  .action(async () => {
+  .option('-v, --verbose', 'Show full session details (host, status, token expiry)')
+  .action(async (opts) => {
     const config = loadGlobalConfig();
 
     console.log('');
@@ -453,32 +460,38 @@ authCmd
       return;
     }
 
-    const host    = config.host || config.apiUrl || DEFAULT_HOST;
-    const account = config.user?.email || config.email || chalk.gray('(unknown)');
+    const username = config.user?.username || config.username || chalk.gray('(unknown)');
+    const email    = config.user?.email || config.email || chalk.gray('(unknown)');
 
-    let statusLine: string;
-    let expiresLine = '';
+    const label = (s: string) => chalk.bold(s.padEnd(12));
+    console.log(`${label('Username')}${username}`);
+    console.log(`${label('Email')}${email}`);
 
-    if (config.expiresAt) {
-      const minsLeft = Math.round((config.expiresAt - Date.now()) / 60_000);
-      if (minsLeft > 0) {
-        statusLine  = chalk.green('Authenticated');
-        expiresLine = minsLeft === 1 ? 'in 1 minute'
-          : minsLeft < 60 ? `in ${minsLeft} minutes`
-          : `in ${Math.round(minsLeft / 60)} hours`;
+    if (opts.verbose) {
+      const host = config.host || config.apiUrl || DEFAULT_HOST;
+      let statusLine: string;
+      let expiresLine = '';
+
+      if (config.expiresAt) {
+        const minsLeft = Math.round((config.expiresAt - Date.now()) / 60_000);
+        if (minsLeft > 0) {
+          statusLine  = chalk.green('Authenticated');
+          expiresLine = minsLeft === 1 ? 'in 1 minute'
+            : minsLeft < 60 ? `in ${minsLeft} minutes`
+            : `in ${Math.round(minsLeft / 60)} hours`;
+        } else {
+          statusLine  = chalk.yellow('Token expired (will auto-refresh on next command)');
+          expiresLine = 'expired';
+        }
       } else {
-        statusLine  = chalk.yellow('Token expired (will auto-refresh on next command)');
-        expiresLine = 'expired';
+        statusLine = chalk.green('Authenticated');
       }
-    } else {
-      statusLine = chalk.green('Authenticated');
+
+      console.log(`${label('Host')}${chalk.cyan(host)}`);
+      console.log(`${label('Status')}${statusLine}`);
+      if (expiresLine) console.log(`${label('Expires')}${expiresLine}`);
     }
 
-    const label = (s: string) => chalk.bold(s.padEnd(10));
-    console.log(`${label('Host')}   ${chalk.cyan(host)}`);
-    console.log(`${label('Account')}${account}`);
-    console.log(`${label('Status')} ${statusLine}`);
-    if (expiresLine) console.log(`${label('Expires')}${expiresLine}`);
     console.log('');
   });
 

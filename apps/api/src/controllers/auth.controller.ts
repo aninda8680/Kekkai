@@ -50,11 +50,12 @@ const COOKIE_OPTS = (secure: boolean) => ({
 
 const RegisterSchema = z.object({
   email: z.string().email(),
+  username: z.string().min(2, 'Username must be at least 2 characters').max(30).regex(/^[a-zA-Z0-9_.-]+$/, 'Username can only contain letters, numbers, hyphens, and underscores'),
   password: z.string().min(1, 'Password cannot be empty'),
 });
 
 const LoginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().min(1, 'Email or username is required'),
   password: z.string().min(1),
 });
 
@@ -78,17 +79,22 @@ export const register = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
   }
 
-  const { email, password } = parsed.data;
+  const { email, username, password } = parsed.data;
 
   // HIBP check removed for now per user request
 
   // P0.7: Generic message — don't reveal whether email exists
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  const existingEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingEmail) {
     // Same 201 shape so timing/message don't enumerate emails
     // We still create a fake delay to resist timing analysis
     await hashPassword('timing-normalisation-dummy-value');
     return res.status(409).json({ error: 'An account with this email already exists' });
+  }
+
+  const existingUsername = await prisma.user.findUnique({ where: { username } });
+  if (existingUsername) {
+    return res.status(409).json({ error: 'An account with this username already exists' });
   }
 
   const passwordHash = await hashPassword(password);
@@ -98,6 +104,7 @@ export const register = async (req: Request, res: Response) => {
   const user = await prisma.user.create({
     data: {
       email,
+      username,
       passwordHash,
       emailVerifyToken,
       emailVerifyExpires,
@@ -113,7 +120,7 @@ export const register = async (req: Request, res: Response) => {
 
   return res.status(201).json({
     message: 'Account created. Check your email to verify your address before creating projects.',
-    user: { id: user.id, email: user.email },
+    user: { id: user.id, email: user.email, username: user.username },
   });
 };
 
@@ -145,7 +152,14 @@ export const login = async (req: Request, res: Response) => {
   if (!parsed.success) return res.status(400).json({ error: 'Invalid credentials' }); // P0.7: generic
 
   const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: email.toLowerCase() },
+        { username: email },
+      ],
+    },
+  });
 
   // P0.7: Always run hash verification to normalize timing (no short-circuit on missing user)
   const passwordToCheck = user?.passwordHash || '$argon2id$timing-normalisation';
@@ -208,7 +222,7 @@ export const login = async (req: Request, res: Response) => {
   });
 
   res.cookie(REFRESH_COOKIE, raw, COOKIE_OPTS(isProduction));
-  return res.json({ user: { id: user.id, email: user.email }, accessToken });
+  return res.json({ user: { id: user.id, email: user.email, username: user.username }, accessToken });
 };
 
 // ─── Refresh (rotation + reuse detection) ────────────────────────────────
@@ -474,9 +488,13 @@ export const deviceCodeApprove = async (req: AuthRequest, res: Response) => {
     },
   });
 
+  const effectiveUsername = user.username || user.email.split('@')[0];
   return res.json({
     status: 'approved',
     deviceInfo: {
+      account: effectiveUsername,
+      username: effectiveUsername,
+      email: user.email,
       ip: record.requestIp,
       device: record.requestDevice,
       requestedAt: record.createdAt,
@@ -505,11 +523,23 @@ export const logout = async (req: Request, res: Response) => {
 // ─── Get Current User ─────────────────────────────────────────────────────
 
 export const getMe = async (req: AuthRequest, res: Response) => {
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { id: req.user!.id },
-    select: { id: true, email: true, emailVerified: true, totpEnabled: true, createdAt: true },
+    select: { id: true, email: true, username: true, emailVerified: true, totpEnabled: true, createdAt: true },
   });
   if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!user.username) {
+    const fallbackUsername = user.email.split('@')[0];
+    try {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { username: fallbackUsername },
+        select: { id: true, email: true, username: true, emailVerified: true, totpEnabled: true, createdAt: true },
+      });
+    } catch {
+      user = { ...user, username: fallbackUsername };
+    }
+  }
   return res.json(user);
 };
 
